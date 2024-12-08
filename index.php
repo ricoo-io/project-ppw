@@ -52,9 +52,12 @@ if (isset($_POST['add_to_cart'])) {
         echo "<script>alert('Product added to cart!');</script>";
     }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
+    $_SESSION['search'] = trim($_POST['search']);
+    header('Location: search.php');
+    exit;
+}
 ?>
-
-
 
 <html lang="en">
 <head>
@@ -72,12 +75,11 @@ if (isset($_POST['add_to_cart'])) {
             <a href="index.php"><img src="public\images\logo_nobg.png" alt="" style="height: 50px; "></a>
         </div>
 
-        
-        <div class="search-container">
-            <input type="text" placeholder="Search..">
-            <i class="fas fa-search"></i>
-        </div>
-        
+        <form method="POST"class="search-container">
+            <input type="text" id="search" name="search" placeholder="Search.." >
+            <button type="submit" name="submit_search"><img src="public\images\search.jpg" alt=""></button>
+        </form>
+
         <ul>
             <li><a href="index.php"><i class="fas fa-home"></i> Home</a></li>
             <li><a href="cart.php"><i class="fas fa-shopping-cart"></i> Cart</a></li>
@@ -119,55 +121,6 @@ if (isset($_POST['add_to_cart'])) {
                         <a href="kategori.php?id=<?php echo urlencode($category['f_id']);?>" style="text-decoration: none;"><h3><?php echo htmlspecialchars($category['f_kategori']);?></h3></a>
                     </div>
                 </div>
-
-                <!-- <div class="box">
-                    <img src="public\images\dress.jpg" alt="">
-                    <div class="info">
-                        <h3>Dress</h3>
-                    </div>
-                </div>
-
-                <div class="box">
-                    <img src="public\images\jeans1.jpg" alt="">
-                    <div class="info">
-                        <h3>Jeans</h3>
-                    </div>
-                </div>
-
-                <div class="box">
-                    <img src="public\images\outwear1.jpg" alt="">
-                    <div class="info">
-                        <h3>Outwear</h3>
-                    </div>
-                </div>
-
-                <div class="box">
-                    <img src="public\images\shirts1.jpg" alt="">
-                    <div class="info">
-                        <h3>Shirts</h3>
-                    </div>
-                </div>
-
-                <div class="box">
-                    <img src="public\images\skirts1.jpg" alt="">
-                    <div class="info">
-                        <h3>Skirts</h3>
-                    </div>
-                </div>
-
-                <div class="box">
-                    <img src="public\images\t-shirts1.jpg" alt="">
-                    <div class="info">
-                        <h3>T-Shirts</h3>
-                    </div>
-                </div>
-
-                <div class="box">
-                    <img src="public\images\trosers1.jpg" alt="">
-                    <div class="info">
-                        <h3>Trousers</h3>
-                    </div>
-                </div> -->
 
             <?php endforeach; ?>
         </div>

@@ -7,54 +7,53 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     exit;
 }
 
+$user_id = $_SESSION['iduser'];
+$db = new dbcontroller();
+
+$search = $_SESSION['search'];
+
+$sql = "SELECT 
+                t_barang.f_id,
+                t_barang.f_pakaian, 
+                t_barang.f_gambar, 
+                t_barang.f_harga, 
+                t_barang.f_rating,
+                t_barang.f_quantity,
+                t_barang.f_detail,
+                t_barang.f_idukuran,  
+                t_barang.f_idkategori,
+                t_kategori.f_kategori,
+                t_ukuran.f_ukuran,    
+                GROUP_CONCAT(t_colors.f_colour) AS colors
+            FROM 
+                t_barang
+            LEFT JOIN 
+                barang_color ON t_barang.f_id = barang_color.f_idbarang
+            LEFT JOIN 
+                t_colors ON barang_color.f_idwarna = t_colors.f_id
+            LEFT JOIN 
+                t_ukuran ON t_barang.f_idukuran = t_ukuran.f_id 
+            LEFT JOIN 
+                t_kategori ON t_barang.f_idkategori = t_kategori.f_id 
+            WHERE 
+                t_barang.f_pakaian LIKE '%$search%'
+            GROUP BY 
+                t_barang.f_id";
+
+    $products = $db->getALL($sql);
+
+
+if (isset($_POST['add_to_cart'])) {
+        $productId = $_POST['product_id'];
+        $quantity = 1; 
+        $db->addToCart($user_id, $productId, $quantity);
+        echo "<script>alert('Product added to cart!');</script>";
+    }
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
     $_SESSION['search'] = trim($_POST['search']);
     header('Location: search.php');
     exit;
-}
-
-$user_id = $_SESSION['iduser'];
-$db = new dbcontroller();
-if (isset($_GET['id'])) {
-    $categoryId = intval($_GET['id']);
-    echo $categoryId;
-    $sql = "SELECT 
-                    t_barang.f_id,
-                    t_barang.f_pakaian, 
-                    t_barang.f_gambar, 
-                    t_barang.f_harga, 
-                    t_barang.f_rating,
-                    t_barang.f_quantity,
-                    t_barang.f_detail,
-                    t_barang.f_idukuran,  
-                    t_barang.f_idkategori,
-                    t_kategori.f_kategori,
-                    t_ukuran.f_ukuran,    
-                    GROUP_CONCAT(t_colors.f_colour) AS colors
-                FROM 
-                    t_barang
-                LEFT JOIN 
-                    barang_color ON t_barang.f_id = barang_color.f_idbarang
-                LEFT JOIN 
-                    t_colors ON barang_color.f_idwarna = t_colors.f_id
-                LEFT JOIN 
-                    t_ukuran ON t_barang.f_idukuran = t_ukuran.f_id 
-                LEFT JOIN 
-                    t_kategori ON t_barang.f_idkategori = t_kategori.f_id 
-                WHERE 
-                    t_barang.f_idkategori = $categoryId
-                GROUP BY 
-                    t_barang.f_id";
-    
-        $products = $db->getALL($sql);
-
-
-    if (isset($_POST['add_to_cart'])) {
-            $productId = $_POST['product_id'];
-            $quantity = 1; 
-            $db->addToCart($user_id, $productId, $quantity);
-            echo "<script>alert('Product added to cart!');</script>";
-        }
 }
 ?>
 

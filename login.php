@@ -5,9 +5,12 @@
 
     require_once 'vendor/autoload.php';
 
-$clientID = '536982568281-8p9ks3fkvldpbvcf5k33ohu3e70i6jjo.apps.googleusercontent.com';
-$clientSecret = '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';
-$redirectUri = 'https://localhost/UTS%20PPW%20Kelompok%208/login.php';
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
+$clientID = $_ENV['CLIENT_ID'];
+$clientSecret = $_ENV['CLIENT_SECRET'];
+$redirectUri = $_ENV['REDIRECT_URI'];
 
 $client = new Google_Client();
 $client->setClientId($clientID);

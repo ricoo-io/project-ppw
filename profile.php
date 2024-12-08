@@ -35,6 +35,12 @@ if (isset($_POST['submitprofile'])) {
     header("Location: profile.php");
     exit();
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
+    $_SESSION['search'] = trim($_POST['search']);
+    header('Location: search.php');
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -55,10 +61,10 @@ if (isset($_POST['submitprofile'])) {
             <a href="index.php"><img src="public/images/logo_nobg.png" alt="" style="height: 50px;"></a>
         </div>
 
-        <div class="search-container">
-            <input type="text" placeholder="Search..">
-            <i class="fas fa-search"></i>
-        </div>
+        <form method="POST"class="search-container">
+            <input type="text" id="search" name="search" placeholder="Search.." >
+            <button type="submit" name="submit_search"><img src="public\images\search.jpg" alt=""></button>
+        </form>
         
         <ul>
             <li><a href="index.php"><i class="fas fa-home"></i> Home</a></li>
@@ -115,22 +121,22 @@ if (isset($_POST['submitprofile'])) {
                 <h2>Profil Saya</h2>
                 <form method="POST">
                     <label for="username">Username</label>
-                    <input type="text" id="username" name="username">
+                    <input type="text" id="username" name="username" required value="<?php echo $row['f_nama'] ?>">
                     
                     <!-- <label for="email">Email</label>
                     <input type="email" id="email" name="email"> -->
                     
                     <label for="phone">Nomor Telepon</label>
-                    <input type="tel" id="phone" name="phone">
+                    <input type="tel" id="phone" name="phone" required value="<?php echo $row['f_telp'] ?>">
                     
                     <label for="loc">Alamat</label>
-                    <input type="text" id="loc" name="loc">
+                    <input type="text" id="loc" name="loc"required value="<?php echo $row['f_alamat'] ?>">
                     
                     <label for="gender">Jenis Kelamin</label>
-                    <input type="text" id="gender" name="gender">
+                    <input type="text" id="gender" name="gender"required value="<?php echo $row['f_jeniskelamin'] ?>">
                     
                     <label for="dob">Tanggal Lahir</label>
-                    <input type="date" id="dob" name="dob">
+                    <input type="date" id="dob" name="dob" required value="<?php echo $row['f_tgl_lahir'] ?>">
                     
                     <button type="submit" name="submitprofile">Simpan</button>
                 </form>

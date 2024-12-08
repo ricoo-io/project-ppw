@@ -53,6 +53,12 @@ if (isset($_GET['id'])) {
       $db->addToCart($user_id, $productId, $quantity);
       $notification = "Product added to cart!";
   }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
+  $_SESSION['search'] = trim($_POST['search']);
+  header('Location: search.php');
+  exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -74,10 +80,10 @@ if (isset($_GET['id'])) {
           <a href="index.php"><img src="public/images/logo_nobg.png" alt="" style="height: 50px;"></a>
       </div>
 
-      <div class="search-container">
-          <input type="text" placeholder="Search..">
-          <i class="fas fa-search"></i>
-      </div>
+      <form method="POST"class="search-container">
+            <input type="text" id="search" name="search" placeholder="Search.." >
+            <button type="submit" name="submit_search"><img src="public\images\search.jpg" alt=""></button>
+      </form>
       
       <ul>
           <li><a href="index.php"><i class="fas fa-home"></i> Home</a></li>
