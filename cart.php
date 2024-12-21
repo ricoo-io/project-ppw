@@ -5,8 +5,12 @@ $db = new dbcontroller();
 
 $iduser = $_SESSION['iduser'];
 
+if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+    header("location: login.php");
+    exit;
+}
 
-$sql = "SELECT t_cart.f_id, t_barang.f_pakaian, t_barang.f_gambar, t_barang.f_harga, t_cart.f_quantity, t_cart.f_total_harga
+$sql = "SELECT t_cart.f_id, t_barang.f_pakaian, t_barang.f_gambar, t_barang.f_harga, t_cart.f_quantity, t_cart.f_total_harga, t_cart.f_iduser, t_cart.f_idbarang
         FROM t_cart
         JOIN t_barang ON t_cart.f_idbarang = t_barang.f_id
         WHERE t_cart.f_iduser = $iduser";
@@ -80,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
     
     <div class="container">
         <div class="title">
-            <h1>Keranjang</h1>
+            <h1>Cart</h1>
         </div>
 
         <div class="container-cart">
@@ -90,22 +94,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
                 if (empty($cartItems)) {
                 ?>
                     <div class="empty-cart-message">
-                        <h2>Your cart is empty!</h2>
-                        <p>Browse our <a href="index.php">products</a> and add items to your cart.</p>
+                        <h2 style="padding: 10px;">Your cart is empty!</h2>
+                        <a href="index.php">Browse Our Products</a>
                     </div>
                 <?php 
                 } else {
                     foreach ($cartItems as $item) {
-                        $totalPrice += $item['f_total_harga'];
                         $totalQuantity += $item['f_quantity'];
                     ?>
                         <div class="cart-item">
-                        <img src="public/images/<?php echo htmlspecialchars($item['f_gambar']); ?>" alt="<?php echo htmlspecialchars($item['f_pakaian']); ?>">
+                            <a href="produk.php?id=<?php echo urlencode($item['f_idbarang']);?>">
+                                <img src="public/images/<?php echo htmlspecialchars($item['f_gambar']); ?>" alt="<?php echo htmlspecialchars($item['f_pakaian']); ?>">
+                            </a>
                             <div class="item-details">
                                 <h4><?= $item['f_pakaian'] ?></h4>
-                                <p>Rp <?= number_format($item['f_harga'], 0, ',', '.') ?></p>
+                                
                             </div>
                             <div class="cart-item-controls">
+                                <p>Rp <?= number_format($item['f_harga'], 0, ',', '.') ?></p>
                                 <form method="POST" action="cart.php">
                                     <input type="hidden" name="cart_id" value="<?= $item['f_id'] ?>">
                                     <button type="submit" name="delete" class="delete-btn">🗑</button>
@@ -120,19 +126,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
                 } ?>
             </div>
 
-            <?php if (!empty($cartItems)) { ?>
+            
                 <div class="cart-summary">
-                    <div class="summary-title">Ringkasan Belanja</div>
+                    <div class="summary-title">Summary</div>
                     <div class="summary-item">
                         <div><?= $totalQuantity ?> Items</div>
+                        <?php if (!empty($cartItems)) { ?>
+                            <?php foreach ($cartItems as $item) {
+                                $totalPrice += $item['f_harga']*$item['f_quantity'];
+                            }?>
                         <div>Total: Rp <?= number_format($totalPrice, 0, ',', '.') ?></div>
+                        <?php } ?>
                     </div>
                     <div class="checkout-buttons">
                         <button class="btn">Check Out</button>
                         <a href="index.php"><button class="btn btn-secondary">Lanjut Belanja</button></a>
                     </div>
                 </div>
-            <?php } ?>
+            
         </div>
 </body>
 </html>

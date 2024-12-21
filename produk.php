@@ -49,7 +49,7 @@ if (isset($_GET['id'])) {
 
     if (isset($_POST['add_to_cart'])) {
       $productId = $_POST['product_id'];
-      $quantity = 1; 
+      $quantity = intval($_POST['quantity']);
       $db->addToCart($user_id, $productId, $quantity);
       $notification = "Product added to cart!";
   }
@@ -143,13 +143,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
     <div class="cart-summary">
       <h3>Atur Jumlah dan Catatan</h3>
       <div class="quantity-controls">
-        <button>-</button>
+        <!-- <button>-</button>
         <span>1</span>
-        <button>+</button>
+        <button>+</button> -->
+        <button onclick="updateQuantity('decrease')" class="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full hover:bg-gray-300">
+            <span class="text-xl font-semibold">-</span>
+        </button>
+          <span id="quantity" class="text-lg text-gray-800">1</span>
+        <button onclick="updateQuantity('increase')"
+          class="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full hover:bg-gray-300">
+            <span class="text-xl font-semibold">+</span>
+        </button>
+
       </div>
-      <p>Subtotal: Rp <?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
+      <p id="subtotal">Subtotal: Rp <?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
       <form method="POST" action="">
           <input type="hidden" name="product_id" value="<?php echo $product['f_id']; ?>">
+          <input type="hidden" id="cart_quantity" name="quantity" value="1">
           <button type="submit" name="add_to_cart" class="checkout-btn">
               <i class="fas fa-shopping-cart"></i> + Add to Cart
           </button>
@@ -169,6 +179,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
       </div>
     </div>
   </div>
+    
+<script>
+  const productPrice = <?php echo $product['f_harga']; ?>;
+  const stock = <?php echo $product['f_quantity']; ?>;
+  let quantity = 1;
+
+  function updateQuantity(action) {
+    const quantityElement = document.getElementById('quantity');
+    const subtotalElement = document.getElementById('subtotal');
+    const cartQuantityField = document.getElementById('cart_quantity');
+
+    if (action === 'increase' && quantity < stock) {
+      quantity++;
+    } else if (action === 'decrease' && quantity > 1) {
+      quantity--;
+    }
+
+    quantityElement.textContent = quantity;
+    subtotalElement.textContent = `Subtotal: Rp ${(quantity * productPrice).toLocaleString('id-ID', { minimumFractionDigits: 0 })}`;
+    cartQuantityField.value = quantity;
+  }
+</script>
 
 </body>
 </html>

@@ -1,149 +1,120 @@
 <?php
 session_start();
-require_once "dbcontroller.php";
+
+require_once('dbcontroller.php');   
+$db = new dbcontroller();
+
+$user_id = $_SESSION['iduser'];
+
 
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     header("location: login.php");
     exit;
 }
 
-$user_id = $_SESSION['iduser'];
-
-$db = new dbcontroller();
-$sql = "SELECT 
-        t_barang.f_id,
-        t_barang.f_pakaian, 
-        t_barang.f_gambar, 
-        t_barang.f_harga, 
-        t_barang.f_rating,
-        t_barang.f_quantity,
-        t_barang.f_idukuran,  
-        t_ukuran.f_ukuran,    
-        t_kategori.f_kategori, 
-
-        GROUP_CONCAT(DISTINCT t_ukuran.f_ukuran ORDER BY FIELD(t_ukuran.f_ukuran, 'S', 'M', 'L', 'XL')) AS ukuran,
-        GROUP_CONCAT(DISTINCT t_colors.f_colour) AS colors
-        FROM 
-        t_barang
-        LEFT JOIN 
-            barang_color ON t_barang.f_id = barang_color.f_idbarang
-        LEFT JOIN 
-            t_colors ON barang_color.f_idwarna = t_colors.f_id
-        LEFT JOIN 
-            barang_ukuran ON t_barang.f_id = barang_ukuran.f_idbarang 
-        LEFT JOIN 
-            t_ukuran ON barang_ukuran.f_idukuran = t_ukuran.f_id 
-        LEFT JOIN 
-            t_kategori ON t_barang.f_idkategori = t_kategori.f_id 
-        GROUP BY 
-            t_barang.f_id";
-
-        $products = $db->getALL($sql);
-
-$sql = "SELECT 
-        f_id,
-        f_kategori,
-        f_gambar
-        FROM t_kategori
-        ORDER BY f_id"; 
-        $categories = $db->getALL($sql);
-
-if (isset($_POST['add_to_cart'])) {
-        $productId = $_POST['product_id'];
-        $quantity = 1; 
-        $db->addToCart($user_id, $productId, $quantity);
-        echo "<script>alert('Product added to cart!');</script>";
-    }
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
-    $_SESSION['search'] = trim($_POST['search']);
-    header('Location: search.php');
-    exit;
-}
-
-
-
 ?>
 
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="icon" href="public\images\logo2.png" type="image/gif" sizes="16x16">
-    <title>KnowDays</title>
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="icon" href="public/images/logo2.png" type="image/gif" sizes="16x16">
+    <title>KnowDays | Profile</title> 
 </head>
 
 <body>
     <nav>
         <div class="img">
-            <a href="index.php"><img src="public\images\logo_nobg.png" alt="" style="height: 50px; "></a>
+            <a href="index.php"><img src="public/images/logo_nobg.png" alt="" style="height: 50px;"></a>
         </div>
 
         <form method="POST"class="search-container">
             <input type="text" id="search" name="search" placeholder="Search.." >
             <button type="submit" name="submit_search"><img src="public\images\search.jpg" alt=""></button>
         </form>
-
+        
         <ul>
             <li><a href="index.php"><i class="fas fa-home"></i> Home</a></li>
             <li><a href="cart.php"><i class="fas fa-shopping-cart"></i> Cart</a></li>
             <li><a href="profile.php"><i class="fas fa-user"></i> User</a></li>
             <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
-        
     </nav>
 
-    <section class="banner">
-        <div class="main-text">
-            <div class="main-textleft">
-                <div class="info">
-                    <h2>Order Your Best <br> Fashion anytime</h2>
-                    <p>Hey, fashion trending is waiting for you <br> Here we provide various types of fashion</p>
+    <div class="container"> 
+        <div class="sidebar">
+            <div class="profile-container">
+                <div class="profile-header">
+                    <img src="public/images/<?php echo $_SESSION['poto']; ?>" alt="Profile Picture">
                 </div>
-            </div>
-            <div class="main-textright">
-                <img src="public\images\fashion.png" alt="">
-            </div>
-            
-        </div>
-    </section>
-
-    <div class="container-1">
-        <div class="content-1">
-            <div class="tag">
-                <h2>Categories</h2>
-                <a href="kategori.php?id==0" class="button">See All</a>
-            </div>
-
-            <div class="box-container">
                 
-                <?php foreach (array_slice($categories, 0, 7)  as $category): ?>
-                    <div class="box">
-                        <a href="kategori.php?id=<?php echo urlencode($category['f_id']);?>">
-                            <img src="public/images/<?php echo htmlspecialchars($category['f_gambar']); ?>" alt="<?php echo htmlspecialchars($category['f_gambar']); ?>">
-                        </a>
-                        <div class="info">
-                            <a href="kategori.php?id=<?php echo urlencode($category['f_id']);?>" style="text-decoration: none;"><h3><?php echo htmlspecialchars($category['f_kategori']);?></h3></a>
-                        </div>
+                <div class="profile-name">
+                    <h2><?php echo $_SESSION['name']; ?></h2>
+                    <div class="profile-detail">
+                        <p><?php echo $_SESSION['email']; ?></p>
                     </div>
-                <?php endforeach; ?>
+                </div>
+                <div class="line"></div>
             </div>
 
-            <div class="like">
-                <h2>You Might Like</h2>
-            </div>
+            <div class="sidebar-menu">
+                <a href="profile.php" >Profile Details</a>
+                <a href="wishlist.php" class="active">Wishlist</a>
+                <a href="Orders.php">My Orders</a>
 
-            <div class="container-cardd">
-                <div class="card-container">
+                <?php if ($_SESSION['role'] == 'admin'): ?>
+                        <a href="kelolaproduk.php">Kelola Produk</a>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <h2>Wishlist</h2>
+
+            <?php
+            $sql = "SELECT 
+            t_barang.f_id,
+            t_barang.f_pakaian, 
+            t_barang.f_gambar, 
+            t_barang.f_harga, 
+            t_barang.f_rating,
+            t_barang.f_quantity,
+            t_barang.f_idukuran,  
+            t_ukuran.f_ukuran,    
+            t_kategori.f_kategori, 
+            GROUP_CONCAT(t_colors.f_colour) AS colors
+            FROM 
+            t_barang
+            LEFT JOIN 
+                barang_color ON t_barang.f_id = barang_color.f_idbarang
+            LEFT JOIN 
+                t_colors ON barang_color.f_idwarna = t_colors.f_id
+            LEFT JOIN 
+                t_ukuran ON t_barang.f_idukuran = t_ukuran.f_id 
+            LEFT JOIN 
+                t_kategori ON t_barang.f_idkategori = t_kategori.f_id 
+            INNER JOIN 
+                t_wishlist ON t_barang.f_id = t_wishlist.f_idbarang
+            WHERE 
+                t_wishlist.f_iduser = $user_id
+            GROUP BY 
+                t_barang.f_id";
+            $products = $db->getALL($sql);
+            ?>
+
+            <div class="card-wrapper">
+                <div class="card-container-2">
                     <?php foreach ($products as $product): ?>
                         <div class="card">
                             <a href="produk.php?id=<?php echo urlencode($product['f_id']);?>">
                                 <img src="public/images/<?php echo htmlspecialchars($product['f_gambar']); ?>" alt="<?php echo htmlspecialchars($product['f_pakaian']); ?>">
                             </a>
                             <div class="card-content">
-                    
                                 <div class="color-wishlist">
                                     <div class="color-product">
                                         <?php 
@@ -153,8 +124,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
                                             <img src="public/images/<?php echo htmlspecialchars(trim($colorImage)); ?>" alt="Color Image">
                                         <?php endforeach; ?>
                                     </div>
-
-                                    
                                     <?php $isInWishlist = $db->isInWishlist($_SESSION['iduser'], $product['f_id']); ?>
                                     <i id="heart-icon-<?php echo $product['f_id']; ?>" 
                                         class="fas fa-heart" 
@@ -162,16 +131,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
                                         onclick="toggleWishlist(<?php echo $_SESSION['iduser']; ?>, <?php echo $product['f_id']; ?>)">
                                     </i>
                                 </div>
-                                <div class="sizes">
-                                    <?php 
-                                    $sizes = explode(',', $product['ukuran']);
-                                    foreach ($sizes as $ukuran): 
-                                    ?>
-                                        <p><?php echo htmlspecialchars(trim($ukuran)); ?> </p>
-                                    <?php endforeach; ?>
+
+                                <div class="quantity">
+                                        <p>stock: <?php echo htmlspecialchars($product['f_quantity']); ?></p>
                                 </div>
+                
                                 <div class="desk">
                                         <h5><?php echo htmlspecialchars($product['f_pakaian']); ?></h5>
+                                    <div class="size">
+                                        <p>size: <?php echo htmlspecialchars($product['f_ukuran']); ?></p>
+                                    </div>
                                 </div>
 
                                 <div class="rattingprice">
@@ -212,14 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
         </div>
     </div>
 
-    <footer>
-        <p class="copy">
-            Copyright <i class="far fa-copyright"> PPW 2024 KnowDays | Kelompok 8</i>
-        </p>
-    </footer>
 
-
-    
 <script>
     function toggleWishlist(userId, itemId) {
         const icon = document.getElementById(`heart-icon-${itemId}`);
@@ -249,8 +211,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
             console.error('Error:', error);
         });
     }
-
 </script>
 </body>
 </html>
-

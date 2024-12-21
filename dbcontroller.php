@@ -78,4 +78,31 @@ public function getAffectedRows()
             mysqli_stmt_execute($insertStmt);
         }
     }
+
+    public function addToWishlist($userId, $productId)
+    {
+        $sql = "INSERT INTO t_wishlist (f_iduser, f_idbarang) VALUES (?, ?)";
+        $stmt = mysqli_prepare($this->koneksi, $sql);
+        mysqli_stmt_bind_param($stmt, "ii", $userId, $productId);
+        return mysqli_stmt_execute($stmt);
+    }
+
+    public function removeFromWishlist($userId, $productId)
+    {
+        $sql = "DELETE FROM t_wishlist WHERE f_iduser = ? AND f_idbarang = ?";
+        $stmt = mysqli_prepare($this->koneksi, $sql);
+        mysqli_stmt_bind_param($stmt, "ii", $userId, $productId);
+        return mysqli_stmt_execute($stmt);
+    }
+
+    public function isInWishlist($userId, $productId)
+    {
+        $sql = "SELECT COUNT(*) AS count FROM t_wishlist WHERE f_iduser = ? AND f_idbarang = ?";
+        $stmt = mysqli_prepare($this->koneksi, $sql);
+        mysqli_stmt_bind_param($stmt, "ii", $userId, $productId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $row = mysqli_fetch_assoc($result);
+        return $row['count'] > 0;
+    }
 }
