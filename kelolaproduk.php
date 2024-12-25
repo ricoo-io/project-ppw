@@ -1,44 +1,229 @@
+<?php
+    
+    require_once "dbcontroller.php";
+    $db = new dbcontroller;
+    session_start();
+
+    $user = $_SESSION['email'];
+    if (isset($_GET['log'])) {
+        session_destroy();
+        header("location:login.php");
+    }
+
+    $jumlahBarang = $db->rowCOUNT("SELECT f_id FROM t_barang");
+    $jumlahKategori = $db->rowCOUNT("SELECT f_id FROM t_kategori");
+    $jumlahUser = $db->rowCOUNT("SELECT f_id FROM t_user");
+
+    $jumlahdata = $db->rowCOUNT("SELECT f_id FROM t_user");
+    $banyak = 15;
+    $halaman = ceil($jumlahdata / $banyak);
+
+    if (isset($_GET['p'])) {
+        $p = $_GET['p'];
+        $mulai = ($p * $banyak) - $banyak;
+    } else {
+        $mulai = 0;
+    }
+
+    $sql = "SELECT * FROM t_user ORDER BY f_id DESC LIMIT $mulai, $banyak";
+    $row = $db->getALL($sql);
+    $no = 1 + $mulai;
+?>
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Layout</title>
-    <link rel="stylesheet" href="css/kelola.css">
-    <link rel="icon" href="public/images/logo2.png" type="image/gif" sizes="16x16">
-    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Dashboard - SB Admin</title>
+        <link rel="icon" href="public/images/logo2.png" type="image/gif" sizes="16x16">
+        <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+        <link href="css/styless.css" rel="stylesheet" />
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    </head>
 
-<body>
-    <nav>
-        <div class="img">
-            <a href="index.php"><img src="public\images\logo_nobg.png" alt="" style="height: 45px; "></a>
-        </div>
+    <body class="sb-nav-fixed">
         
-        <ul>
-            <li><a href="index.php"><i class="fas fa-home"></i> Home</a></li>
-            <li><a href="cart.php"><i class="fas fa-shopping-cart"></i> Cart</a></li>
-            <li><a href="logout.php" ><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-            <li><a href="profile.php"><i class="fas fa-user"></i> User</a></li>
-        </ul>
-        
-    </nav>
+        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+            <!-- Navbar Brand-->
+            <a class="navbar-brand ps-2" href="index.php"><img src="public/images/logobaru.png" alt="" style="height: 48px;"></a>
+            <!-- Sidebar Toggle-->
+            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
+            <!-- Navbar Search
+            <form class="d-none d-md-inline-block form-inline ms-auto me-0 me-md-3 my-2 my-md-0">
+                <div class="input-group">
+                    <input class="form-control" type="text" placeholder="Search for..." aria-label="Search for..." aria-describedby="btnNavbarSearch" />
+                    <button class="btn btn-primary" id="btnNavbarSearch" type="button"><i class="fas fa-search"></i></button>
+                </div>
+            </form> -->
 
-    <div class="sidebar">
-        <div class="sidebar-buttons">
-            <a href="kategori/select.php"><button class="sidebar-button">Kategori</button></a>
-            <a href="barang/select.php"><button class="sidebar-button">Barang</button></a>
-            <a href="profile/select.php"><button class="sidebar-button">Profile</button></a>
+            <!-- Navbar-->
+            <ul class="navbar-nav ms-auto ms-md-8 me-3 me-lg-4">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="?log=logout">Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+
+        <div id="layoutSidenav">
+            <div id="layoutSidenav_nav">
+                <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                    <div class="sb-sidenav-menu">
+                        <div class="nav">
+                            <div class="sb-sidenav-menu-heading">Core</div>
+                            
+                            <a class="nav-link" href="kelolaproduk.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                Dashboard
+                            </a>
+                            
+                            <a class="nav-link" href="kategori/select.php">
+                                <div class="sb-nav-link-icon"><i class="fa-solid fa-list"></i></div>
+                                Category
+                            </a>
+                            <a class="nav-link" href="barang/select.php">
+                                <div class="sb-nav-link-icon"><i class="fa-solid fa-box"></i></div>
+                                Product
+                            </a>
+
+                            <a class="nav-link" href="profile/select.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-user"></i></div>
+                                User
+                            </a>
+
+                            <a class="nav-link" href="order/select.php">
+                                <div class="sb-nav-link-icon"><i class="fa-solid fa-cart-shopping"></i></div>
+                                Order
+                            </a>
+
+                            <a class="nav-link" href="diskon/select.php">
+                                <div class="sb-nav-link-icon"><i class="fa-solid fa-tag"></i></div>
+                                Discount
+                            </a>
+                            
+                        </div>
+                    </div>
+                    <div class="sb-sidenav-footer">
+                        <div class="small">Logged in as: <span><?php echo $_SESSION['email'] ?></span></div>
+                    </div>
+                </nav>
+            </div>
+            
+            <div id="layoutSidenav_content">
+                <main>
+                    <div class="container-fluid px-4">
+                        <h1 class="mt-4">Dashboard</h1>
+
+                        <ol class="breadcrumb mb-4">
+                            <li class="breadcrumb-item active">Selamat Datang Admin</li>
+                        </ol>
+
+                        <div class="row">
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card bg-primary text-white mb-4">
+                                    <div class="card-body">Barang: <?php echo $jumlahBarang; ?></div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="barang/select.php">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card bg-warning text-white mb-4">
+                                    <div class="card-body">Kategori: <?php echo $jumlahKategori; ?></div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="kategori/select.php">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card bg-success text-white mb-4">
+                                    <div class="card-body">User: <?php echo $jumlahUser; ?></div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="profile/select.php">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- <div class="col-xl-3 col-md-6">
+                                <div class="card bg-danger text-white mb-4">
+                                    <div class="card-body">Danger Card</div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="#">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div> -->
+                        </div>
+                        
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-table me-1"></i>
+                                DataTable user
+                            </div>
+
+                            <div class="card-body">
+                                <table id="datatablesSimple">
+                                    <thead>
+                                        <tr>
+                                            <th>No</th>
+                                            <th>Nama</th>
+                                            <th>Role</th>
+                                            <th>Email</th>
+                                            <th>Alamat</th>
+                                            <th>Telpon</th>
+                                            <th>Jenis Kelamin</th>
+                                        </tr>
+                                    </thead>
+                                    
+                                    <tbody>
+                                    <?php if(!empty($row)) { ?>
+                                        <?php foreach ($row as $r) : ?>
+                                            <tr>
+                                                <td><?php echo $no++?></td>
+                                                <td><?php echo $r['f_nama'] ?></td>
+                                                <td><?php echo $r['f_peran'] ?></td>
+                                                <td><?php echo $r['email'] ?></td>
+                                                <td><?php echo $r['f_alamat'] ?></td>
+                                                <td><?php echo $r['f_telp'] ?></td>
+                                                <td><?php echo $r['f_jeniskelamin'] ?></td>
+                                            </tr>
+                                        <?php endforeach ?>
+                                    <?php } ?>
+                                        
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+                <footer class="py-4 bg-light mt-auto">
+                    <div class="container-fluid px-4">
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <div class="text-muted">Copyright &copy; KnowDays PPW 2024</div>
+                            <div>
+                                <a href="#">Privacy Policy</a>
+                                &middot;
+                                <a href="#">Terms &amp; Conditions</a>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            </div>
         </div>
-    </div>
-    
 
-    <div class="main-content">
-        <div class="content-header">
-            <h2>Selamat Datang di Halaman Kelola Produk (i ilove johar)</h2>
-        </div>
-
-    </div>
-</body>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+        <script src="js/scripts.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+        <script src="assets/demo/chart-area-demo.js"></script>
+        <script src="assets/demo/chart-bar-demo.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
+        <script src="js/datatables-simple-demo.js"></script>
+    </body>
 </html>

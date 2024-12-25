@@ -89,7 +89,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin: 10px 0;
+    margin-bottom: 20px;
+    margin-top: 10px;
 }
 
 .option {
@@ -118,7 +119,6 @@ body {
 
 .cart-summary {
     flex: 1;
-    height: 340px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -139,7 +139,9 @@ body {
     align-items: center;
     gap: 10px;
     margin: 10px 0;
+    padding: 5px;
     justify-content: space-between;
+    box-shadow: rgb(141, 150, 170, 0.4) 0px 1px 4px;
 }
 
 .quantity-controls button {
@@ -208,4 +210,43 @@ body {
     color: #888;
     border-top: 1px solid #ddd;
     margin-top: 15px;
+}
+
+.color-product2 input[type="radio"],
+.option-buttons input[type="radio"] {
+    display: none;
+}
+
+.color-product2 input[type="radio"]:checked + img,
+.option-buttons input[type="radio"]:checked + .size-label {
+    outline: 2px solid #bcbcbc;
+}
+
+.size-label {
+    display: inline-block;
+    transition: border-color 0.3s;
+    cursor: pointer;
+    background-color: #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    color: #333;
+    text-align: center; 
+    width: 35px;
+    padding: 3px ;
+}
+
+.color-product2 img{
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    border: 1px solid #8c8c8c;
+    cursor: pointer;
+}
+
+.size-label input[type="radio"]:checked + .size-text{
+    background-color: #fff; 
+    color: #000; 
+    outline: 2px solid #868686; 
+    padding: 5px 10px;
+    border-radius: 5px;
 }

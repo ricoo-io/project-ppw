@@ -19,7 +19,6 @@ $role = $row['f_peran'];
 
 if (isset($_POST['submitprofile'])) {
     $name = $_POST['username'];
-    // $email = $_POST['email'];
     $telp = $_POST['phone'];
     $alm = $_POST['loc'];
     $jns = $_POST['gender'];
@@ -30,7 +29,6 @@ if (isset($_POST['submitprofile'])) {
     $db->runSQL($sql_update);
 
     $_SESSION['name'] = $name;
-    // $_SESSION['email'] = $email;
     $_SESSION['phone'] = $telp; 
     $_SESSION['address'] = $alm;
     $_SESSION['gender'] = $jns; 

@@ -61,11 +61,10 @@ if (isset($_GET['id'])) {
                     t_barang.f_rating,
                     t_barang.f_quantity,
                     t_barang.f_detail,
-                    t_barang.f_idukuran,  
                     t_barang.f_idkategori,
                     t_kategori.f_kategori,
-                    t_ukuran.f_ukuran,    
-                    GROUP_CONCAT(t_colors.f_colour) AS colors
+                    GROUP_CONCAT(DISTINCT t_ukuran.f_ukuran ORDER BY FIELD(t_ukuran.f_ukuran, 'S', 'M', 'L', 'XL')) AS ukuran,
+                    GROUP_CONCAT(DISTINCT t_colors.f_colour) AS colors
                 FROM 
                     t_barang
                 LEFT JOIN 
@@ -73,7 +72,9 @@ if (isset($_GET['id'])) {
                 LEFT JOIN 
                     t_colors ON barang_color.f_idwarna = t_colors.f_id
                 LEFT JOIN 
-                    t_ukuran ON t_barang.f_idukuran = t_ukuran.f_id 
+                    barang_ukuran ON t_barang.f_id = barang_ukuran.f_idbarang
+                LEFT JOIN 
+                    t_ukuran ON barang_ukuran.f_idukuran = t_ukuran.f_id 
                 LEFT JOIN 
                     t_kategori ON t_barang.f_idkategori = t_kategori.f_id";
                 if ($categoryId !== null && $categoryId > 0) {
@@ -92,8 +93,10 @@ $categoryName = $db->getITEM($sql);
 
 if (isset($_POST['add_to_cart'])) {
         $productId = $_POST['product_id'];
+        $size = $_POST['size'];
+        $color = $_POST['color'];
         $quantity = 1; 
-        $db->addToCart($user_id, $productId, $quantity);
+        $db->addToCart($user_id, $productId, $quantity, $size,$color);
         echo "<script>alert('Product added to cart!');</script>";
     }
 }
@@ -191,15 +194,17 @@ if (isset($_POST['add_to_cart'])) {
                                         </i>
                                     </div>
 
-                                    <div class="quantity">
-                                            <p>stock: <?php echo htmlspecialchars($product['f_quantity']); ?></p>
+                                    <div class="sizes">
+                                        <?php 
+                                        $sizes = explode(',', $product['ukuran']);
+                                        foreach ($sizes as $ukuran): 
+                                        ?>
+                                            <p><?php echo htmlspecialchars(trim($ukuran)); ?> </p>
+                                        <?php endforeach; ?>
                                     </div>
                     
                                     <div class="desk">
                                             <h5><?php echo htmlspecialchars($product['f_pakaian']); ?></h5>
-                                        <div class="size">
-                                            <p>size: <?php echo htmlspecialchars($product['f_ukuran']); ?></p>
-                                        </div>
                                     </div>
 
                                     <div class="rattingprice">
@@ -221,12 +226,16 @@ if (isset($_POST['add_to_cart'])) {
 
                                     <div class="btn-cart-details">
                                         <div class="cart">
-                                        <form method="POST" action="">
-                                            <input type="hidden" name="product_id" value="<?php echo $product['f_id']; ?>">
-                                            <button type="submit" name="add_to_cart">
+                                            <button type="button" onclick='showPopup(<?php 
+                                                echo json_encode([
+                                                    "id" => $product["f_id"],
+                                                    "name" => $product["f_pakaian"],
+                                                    "colors" => $product["colors"],
+                                                    "sizes" => $product["ukuran"]
+                                                ], JSON_HEX_APOS | JSON_HEX_QUOT); 
+                                            ?>)'>
                                                 <i class="fas fa-shopping-cart"></i> Add to Cart
                                             </button>
-                                        </form>
                                         </div>
                                         <div class="details">
                                             <button><a href="produk.php?id=<?php echo urlencode($product['f_id']);?>"><i class="fas fa-shopping-bag"></i> Details</a></button>
@@ -241,6 +250,36 @@ if (isset($_POST['add_to_cart'])) {
         </div>
     </div>
 
+    <div id="cartPopup" class="popup-2" style="display: none;">
+        <div class="popup-content">
+            <form id="cartForm" method="POST" action="">
+                <input type="hidden" name="product_id" id="popup_product_id">
+                <h3 id="popup_product_name"></h3>
+                <div class="options">
+                    <div class="option">
+                        <label>Pilihan Warna:</label>
+                        <div class="color-product2" id="popup_colors">
+                           
+                        </div>
+                    </div>
+                    <div class="option">
+                        <label>Ukuran:</label>
+                        <div class="option-buttons" id="popup_sizes">
+                       
+                        </div>
+                    </div>
+                </div>
+                <div class="cart">
+                    <button type="submit" name="add_to_cart" class="checkout-btn">
+                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                    </button>
+                    <button type="button" onclick="closePopup()" class="cancel-btn" style="background-color: #f44336;">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>  
+    </div>
 
 <script>
     function toggleWishlist(userId, itemId) {
@@ -262,7 +301,6 @@ if (isset($_POST['add_to_cart'])) {
         .then(data => {
             if (data.success) {
                 icon.style.color = isInWishlist ? "rgb(155, 155, 155)" : "rgb(255, 0, 0)";
-                location.reload();
             } else {
                 alert('Failed to update wishlist: ' + data.message);
             }
@@ -270,6 +308,58 @@ if (isset($_POST['add_to_cart'])) {
         .catch(error => {
             console.error('Error:', error);
         });
+    }
+
+    function showPopup(productData) {
+        const popup = document.getElementById('cartPopup');
+        const popupColors = document.getElementById('popup_colors');
+        const popupSizes = document.getElementById('popup_sizes');
+        const productIdInput = document.getElementById('popup_product_id');
+        const productNameElement = document.getElementById('popup_product_name');
+
+        productIdInput.value = productData.id;
+        productNameElement.textContent = productData.name;
+
+        popupColors.innerHTML = '';
+        popupSizes.innerHTML = '';
+
+        productData.colors.split(',').forEach((color, index) => {
+            const colorTrim = color.trim();
+            const label = document.createElement('label');
+            const radioId = `color_${productData.id}_${index}`;
+            
+            label.innerHTML = `
+                <input type="radio" id="${radioId}" name="color" value="${colorTrim}" required>
+                <img src="public/images/${colorTrim}" alt="Color ${colorTrim}">
+            `;
+            popupColors.appendChild(label);
+        });
+
+        productData.sizes.split(',').forEach((size, index) => {
+            const sizeTrim = size.trim();
+            const label = document.createElement('label');
+            const radioId = `size_${productData.id}_${index}`;
+            
+            label.className = 'size-label';
+            label.innerHTML = `
+                <input type="radio" id="${radioId}" name="size" value="${sizeTrim}" required>
+                <span class="size-text">${sizeTrim}</span>
+            `;
+            popupSizes.appendChild(label);
+        });
+
+        popup.style.display = 'flex';
+    }
+
+    function closePopup() {
+        document.getElementById('cartPopup').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        const popup = document.getElementById('cartPopup');
+        if (event.target === popup) {
+            closePopup();
+        }
     }
 
 </script>

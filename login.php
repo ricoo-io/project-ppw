@@ -82,6 +82,7 @@ if (isset($_POST['log'])) {
             $_SESSION['name'] = $row['f_nama'];
             $_SESSION['iduser'] = $row['f_id'];
             $_SESSION['role'] = $row['f_peran'];
+            $_SESSION['poto'] = $row['f_poto'];
             $_SESSION['loggedin'] = true; 
             header("Location: index.php");
             exit();

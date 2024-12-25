@@ -64,8 +64,8 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 
             <div class="sidebar-menu">
                 <a href="profile.php" >Profile Details</a>
-                <a href="wishlist.php" class="active">Wishlist</a>
-                <a href="Orders.php">My Orders</a>
+                <a href="wishlist.php" >Wishlist</a>
+                <a href="Orders.php" class="active">My Orders</a>
 
                 <?php if ($_SESSION['role'] == 'admin'): ?>
                         <a href="kelolaproduk.php">Kelola Produk</a>
@@ -83,19 +83,20 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             t_barang.f_gambar, 
             t_barang.f_harga, 
             t_barang.f_rating,
-            t_barang.f_quantity,
-            t_barang.f_idukuran,  
-            t_ukuran.f_ukuran,    
+            t_barang.f_quantity,     
             t_kategori.f_kategori, 
-            GROUP_CONCAT(t_colors.f_colour) AS colors
+            GROUP_CONCAT(DISTINCT t_ukuran.f_ukuran ORDER BY FIELD(t_ukuran.f_ukuran, 'S', 'M', 'L', 'XL')) AS ukuran,
+            GROUP_CONCAT(DISTINCT t_colors.f_colour) AS colors
             FROM 
             t_barang
             LEFT JOIN 
                 barang_color ON t_barang.f_id = barang_color.f_idbarang
             LEFT JOIN 
                 t_colors ON barang_color.f_idwarna = t_colors.f_id
+           LEFT JOIN 
+                    barang_ukuran ON t_barang.f_id = barang_ukuran.f_idbarang
             LEFT JOIN 
-                t_ukuran ON t_barang.f_idukuran = t_ukuran.f_id 
+                t_ukuran ON barang_ukuran.f_idukuran = t_ukuran.f_id
             LEFT JOIN 
                 t_kategori ON t_barang.f_idkategori = t_kategori.f_id 
             INNER JOIN 

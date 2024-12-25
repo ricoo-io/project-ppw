@@ -56,25 +56,24 @@ public function getAffectedRows()
         $result = mysqli_query($this->koneksi, $sql);
     }
 
-    public function addToCart($userId, $productId, $quantity)
+    public function addToCart($userId, $productId, $quantity, $size, $color)
     {  
-        $sql = "SELECT f_quantity FROM t_cart WHERE f_iduser = ? AND f_idbarang = ?";
+        $sql = "SELECT f_quantity FROM t_cart WHERE f_iduser = ? AND f_idbarang = ? AND f_ukuran = ? AND f_warna = ?";
         $stmt = mysqli_prepare($this->koneksi, $sql);
-        mysqli_stmt_bind_param($stmt, "ii", $userId, $productId);
+        mysqli_stmt_bind_param($stmt, "iiss", $userId, $productId, $size, $color);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
-
+    
         if ($row = mysqli_fetch_assoc($result)) {
             $newQuantity = $row['f_quantity'] + $quantity;
-            $updateSQL = "UPDATE t_cart SET f_quantity = ? WHERE f_iduser = ? AND f_idbarang = ?";
+            $updateSQL = "UPDATE t_cart SET f_quantity = ? WHERE f_iduser = ? AND f_idbarang = ? AND f_ukuran = ? AND f_warna = ?";
             $updateStmt = mysqli_prepare($this->koneksi, $updateSQL);
-            mysqli_stmt_bind_param($updateStmt, "iii", $newQuantity, $userId, $productId);
+            mysqli_stmt_bind_param($updateStmt, "iiiss", $newQuantity, $userId, $productId, $size, $color);
             mysqli_stmt_execute($updateStmt);
         } else {
-            
-            $insertSQL = "INSERT INTO t_cart (f_iduser, f_idbarang, f_quantity) VALUES (?, ?, ?)";
+            $insertSQL = "INSERT INTO t_cart (f_iduser, f_idbarang, f_quantity, f_ukuran, f_warna) VALUES (?, ?, ?, ?, ?)";
             $insertStmt = mysqli_prepare($this->koneksi, $insertSQL);
-            mysqli_stmt_bind_param($insertStmt, "iii", $userId, $productId, $quantity);
+            mysqli_stmt_bind_param($insertStmt, "iiiss", $userId, $productId, $quantity, $size, $color);
             mysqli_stmt_execute($insertStmt);
         }
     }

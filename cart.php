@@ -10,7 +10,9 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     exit;
 }
 
-$sql = "SELECT t_cart.f_id, t_barang.f_pakaian, t_barang.f_gambar, t_barang.f_harga, t_cart.f_quantity, t_cart.f_total_harga, t_cart.f_iduser, t_cart.f_idbarang
+$sql = "SELECT t_cart.f_id, t_barang.f_pakaian, t_barang.f_gambar, t_barang.f_harga, 
+        t_cart.f_quantity, t_cart.f_total_harga, t_cart.f_iduser, t_cart.f_idbarang, 
+        t_cart.f_ukuran, t_cart.f_warna, t_barang.f_quantity as stock
         FROM t_cart
         JOIN t_barang ON t_cart.f_idbarang = t_barang.f_id
         WHERE t_cart.f_iduser = $iduser";
@@ -46,9 +48,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
 }
 ?>
 
-
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -64,32 +63,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
     <nav>
         <div class="img">
             <a href="index.php"><img src="public\images\logo_nobg.png" alt="" style="height: 50px;"></a>
-            
         </div>
-
-        
-        <form method="POST"class="search-container">
-            <input type="text" id="search" name="search" placeholder="Search.." >
+        <form method="POST" class="search-container">
+            <input type="text" id="search" name="search" placeholder="Search..">
             <button type="submit" name="submit_search"><img src="public\images\search.jpg" alt=""></button>
         </form>
-        
         <ul>
             <li><a href="index.php"><i class="fas fa-home"></i> Home</a></li>
             <li><a href="cart.php"><i class="fas fa-shopping-cart"></i> Cart</a></li>
             <li><a href="profile.php"><i class="fas fa-user"></i> User</a></li>
             <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
-        
     </nav>
     
     <div class="container">
         <div class="title">
             <h1>Cart</h1>
         </div>
-
         <div class="container-cart">
             <div class="cart-items">
-            
                 <?php 
                 if (empty($cartItems)) {
                 ?>
@@ -103,47 +95,133 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
                         $totalQuantity += $item['f_quantity'];
                     ?>
                         <div class="cart-item">
-                            <a href="produk.php?id=<?php echo urlencode($item['f_idbarang']);?>">
-                                <img src="public/images/<?php echo htmlspecialchars($item['f_gambar']); ?>" alt="<?php echo htmlspecialchars($item['f_pakaian']); ?>">
-                            </a>
+                            <div class="product-image">
+                                <a href="produk.php?id=<?php echo urlencode($item['f_idbarang']);?>">
+                                    <img src="public/images/<?php echo htmlspecialchars($item['f_gambar']); ?>" alt="<?php echo htmlspecialchars($item['f_pakaian']); ?>">
+                                </a>
+                            </div>
                             <div class="item-details">
-                                <h4><?= $item['f_pakaian'] ?></h4>
+                                <h4><?= htmlspecialchars($item['f_pakaian']) ?></h4>
+                                <div class="product-color">
+                                    <p>Size: <?= htmlspecialchars($item['f_ukuran']); ?></p>
+                                    <img src="public/images/<?= htmlspecialchars($item['f_warna']); ?>" alt="color">
+                                </div>
                                 
                             </div>
                             <div class="cart-item-controls">
                                 <p>Rp <?= number_format($item['f_harga'], 0, ',', '.') ?></p>
-                                <form method="POST" action="cart.php">
+                                <form method="POST" action="cart.php" class="quantity-form">
                                     <input type="hidden" name="cart_id" value="<?= $item['f_id'] ?>">
+                                    <input type="hidden" id="stock-<?= $item['f_id'] ?>" value="<?= $item['stock'] ?>">
+                                    <?php $isInWishlist = $db->isInWishlist($_SESSION['iduser'], $item['f_idbarang']); ?>
+                                        <i id="heart-icon-<?php echo $item['f_idbarang']; ?>" 
+                                            class="fas fa-heart" 
+                                            style="color: <?php echo $isInWishlist ? "rgb(255, 0, 0)" : "rgb(155, 155, 155)"; ?>; font-size: 25px; cursor: pointer;"
+                                            onclick="toggleWishlist(<?php echo $_SESSION['iduser']; ?>, <?php echo $item['f_idbarang']; ?>)">
+                                        </i>
                                     <button type="submit" name="delete" class="delete-btn">🗑</button>
-                                   
-                                    <input type="number" name="quantity" value="<?= $item['f_quantity'] ?>" min="1" style="width: 50px;">
-                                    
-                                    <button type="submit" name="update" class="update-btn">Update</button>
+                                    <button type="button" class="decrement-btn" onclick="updateQuantity(<?= $item['f_id'] ?>, -1, <?= $item['f_harga'] ?>)">-</button>
+                                    <input type="number" style="text-align: center" id="quantity-<?= $item['f_id'] ?>" value="<?= $item['f_quantity'] ?>" min="1" max="<?= $item['stock'] ?>" readonly>
+                                    <button type="button" class="increment-btn" onclick="updateQuantity(<?= $item['f_id'] ?>, 1, <?= $item['f_harga'] ?>)">+</button>
                                 </form>
                             </div>
                         </div>
                     <?php } 
                 } ?>
             </div>
-
-            
-                <div class="cart-summary">
-                    <div class="summary-title">Summary</div>
-                    <div class="summary-item">
-                        <div><?= $totalQuantity ?> Items</div>
-                        <?php if (!empty($cartItems)) { ?>
-                            <?php foreach ($cartItems as $item) {
-                                $totalPrice += $item['f_harga']*$item['f_quantity'];
-                            }?>
-                        <div>Total: Rp <?= number_format($totalPrice, 0, ',', '.') ?></div>
-                        <?php } ?>
-                    </div>
-                    <div class="checkout-buttons">
-                        <button class="btn">Check Out</button>
-                        <a href="index.php"><button class="btn btn-secondary">Lanjut Belanja</button></a>
-                    </div>
+            <div class="cart-summary">
+                <div class="summary-title">Summary</div>
+                <div class="summary-item">
+                    <div id="total-items"><?= $totalQuantity ?> Items</div>
+                    <?php if (!empty($cartItems)) { ?>
+                        <?php foreach ($cartItems as $item) {
+                            $totalPrice += $item['f_harga'] * $item['f_quantity'];
+                        }?>
+                    <div id="total-price">Total: Rp <?= number_format($totalPrice, 0, ',', '.') ?></div>
+                    <?php } ?>
                 </div>
-            
+                <div class="checkout-buttons">
+                    <a href="Checkout.php">Check Out</a>
+                </div>
+            </div>
         </div>
+    </div>
+
+<script>
+
+
+function toggleWishlist(userId, itemId) {
+        const icon = document.getElementById(`heart-icon-${itemId}`);
+        const isInWishlist = icon.style.color === "rgb(255, 0, 0)"; // Check if already liked
+
+        fetch('toggle-wishlist.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId: userId,
+                itemId: itemId,
+                action: isInWishlist ? 'remove' : 'add'
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                icon.style.color = isInWishlist ? "rgb(155, 155, 155)" : "rgb(255, 0, 0)";
+                location.reload();
+            } else {
+                alert('Failed to update wishlist: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+function updateQuantity(cartId, change, price) {
+    const quantityInput = document.getElementById(`quantity-${cartId}`);
+    const stockInput = document.getElementById(`stock-${cartId}`);
+    const stock = parseInt(stockInput.value);
+    let newQuantity = parseInt(quantityInput.value) + change;
+    
+    // Prevent exceeding stock limit or going below 1
+    if (newQuantity < 1) newQuantity = 1;
+    if (newQuantity > stock) {
+        alert('Cannot exceed available stock!');
+        newQuantity = stock;
+    }
+    
+    
+    // Update the display
+    quantityInput.value = newQuantity;
+    
+    // Calculate new totals
+    let totalItems = 0;
+    let totalPrice = 0;
+    
+    // Get all quantity inputs
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+        totalItems += parseInt(input.value);
+        const itemPrice = parseFloat(input.closest('.cart-item')
+            .querySelector('.cart-item-controls p').textContent.replace(/[^0-9]/g, ''));
+        totalPrice += itemPrice * parseInt(input.value);
+    });
+    
+    // Update summary
+    document.getElementById('total-items').textContent = `${totalItems} Items`;
+    document.getElementById('total-price').textContent = `Total: Rp ${totalPrice.toLocaleString('id-ID')}`;
+    
+    // Send update to server
+    fetch('cart.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `update=true&cart_id=${cartId}&quantity=${newQuantity}`
+    });
+}
+
+</script>
 </body>
 </html>

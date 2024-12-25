@@ -12,6 +12,46 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     exit;
 }
 
+$sql = "SELECT 
+t_barang.f_id,
+t_barang.f_pakaian, 
+t_barang.f_gambar, 
+t_barang.f_harga, 
+t_barang.f_rating,
+t_barang.f_quantity,   
+t_kategori.f_kategori, 
+GROUP_CONCAT(DISTINCT t_ukuran.f_ukuran ORDER BY FIELD(t_ukuran.f_ukuran, 'S', 'M', 'L', 'XL')) AS ukuran,
+GROUP_CONCAT(DISTINCT t_colors.f_colour) AS colors
+FROM 
+t_barang
+LEFT JOIN 
+    barang_color ON t_barang.f_id = barang_color.f_idbarang
+LEFT JOIN 
+    t_colors ON barang_color.f_idwarna = t_colors.f_id
+LEFT JOIN 
+    barang_ukuran ON t_barang.f_id = barang_ukuran.f_idbarang
+LEFT JOIN 
+    t_ukuran ON barang_ukuran.f_idukuran = t_ukuran.f_id  
+LEFT JOIN 
+    t_kategori ON t_barang.f_idkategori = t_kategori.f_id 
+INNER JOIN 
+    t_wishlist ON t_barang.f_id = t_wishlist.f_idbarang
+WHERE 
+    t_wishlist.f_iduser = $user_id
+GROUP BY 
+    t_barang.f_id";
+$products = $db->getALL($sql);
+
+
+if (isset($_POST['add_to_cart'])) {
+    $productId = $_POST['product_id'];
+    $size = $_POST['size'];
+    $color = $_POST['color'];
+    $quantity = 1; 
+    $db->addToCart($user_id, $productId, $quantity, $size,$color);
+    echo "<script>alert('Product added to cart!');</script>";
+}
+
 ?>
 
 
@@ -76,111 +116,122 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
         <div class="main-content">
             <h2>Wishlist</h2>
 
-            <?php
-            $sql = "SELECT 
-            t_barang.f_id,
-            t_barang.f_pakaian, 
-            t_barang.f_gambar, 
-            t_barang.f_harga, 
-            t_barang.f_rating,
-            t_barang.f_quantity,
-            t_barang.f_idukuran,  
-            t_ukuran.f_ukuran,    
-            t_kategori.f_kategori, 
-            GROUP_CONCAT(t_colors.f_colour) AS colors
-            FROM 
-            t_barang
-            LEFT JOIN 
-                barang_color ON t_barang.f_id = barang_color.f_idbarang
-            LEFT JOIN 
-                t_colors ON barang_color.f_idwarna = t_colors.f_id
-            LEFT JOIN 
-                t_ukuran ON t_barang.f_idukuran = t_ukuran.f_id 
-            LEFT JOIN 
-                t_kategori ON t_barang.f_idkategori = t_kategori.f_id 
-            INNER JOIN 
-                t_wishlist ON t_barang.f_id = t_wishlist.f_idbarang
-            WHERE 
-                t_wishlist.f_iduser = $user_id
-            GROUP BY 
-                t_barang.f_id";
-            $products = $db->getALL($sql);
-            ?>
-
             <div class="card-wrapper">
                 <div class="card-container-2">
-                    <?php foreach ($products as $product): ?>
-                        <div class="card">
-                            <a href="produk.php?id=<?php echo urlencode($product['f_id']);?>">
-                                <img src="public/images/<?php echo htmlspecialchars($product['f_gambar']); ?>" alt="<?php echo htmlspecialchars($product['f_pakaian']); ?>">
-                            </a>
-                            <div class="card-content">
-                                <div class="color-wishlist">
-                                    <div class="color-product">
+                    <?php if (empty($products)): ?>
+                        <div class="empty-wishlist">
+                            <h1>No items in wishlist</h1>
+                        </div>
+                        
+                    <?php else: ?>
+                        <?php foreach ($products as $product): ?>
+                            <div class="card">
+                                <a href="produk.php?id=<?php echo urlencode($product['f_id']);?>">
+                                    <img src="public/images/<?php echo htmlspecialchars($product['f_gambar']); ?>" alt="<?php echo htmlspecialchars($product['f_pakaian']); ?>">
+                                </a>
+                                <div class="card-content">
+                                    <div class="color-wishlist">
+                                        <div class="color-product">
+                                            <?php 
+                                            $colorImages = explode(',', $product['colors']);
+                                            foreach ($colorImages as $colorImage): 
+                                            ?>
+                                                <img src="public/images/<?php echo htmlspecialchars(trim($colorImage)); ?>" alt="Color Image">
+                                            <?php endforeach; ?>
+                                        </div>
+                                        <?php $isInWishlist = $db->isInWishlist($_SESSION['iduser'], $product['f_id']); ?>
+                                        <i id="heart-icon-<?php echo $product['f_id']; ?>" 
+                                            class="fas fa-heart" 
+                                            style="color: <?php echo $isInWishlist ? "rgb(255, 0, 0)" : "rgb(155, 155, 155)"; ?>; font-size: 25px; cursor: pointer;"
+                                            onclick="toggleWishlist(<?php echo $_SESSION['iduser']; ?>, <?php echo $product['f_id']; ?>)">
+                                        </i>
+                                    </div>
+
+                                    <div class="sizes">
                                         <?php 
-                                        $colorImages = explode(',', $product['colors']);
-                                        foreach ($colorImages as $colorImage): 
+                                        $sizes = explode(',', $product['ukuran']);
+                                        foreach ($sizes as $ukuran): 
                                         ?>
-                                            <img src="public/images/<?php echo htmlspecialchars(trim($colorImage)); ?>" alt="Color Image">
+                                            <p><?php echo htmlspecialchars(trim($ukuran)); ?> </p>
                                         <?php endforeach; ?>
                                     </div>
-                                    <?php $isInWishlist = $db->isInWishlist($_SESSION['iduser'], $product['f_id']); ?>
-                                    <i id="heart-icon-<?php echo $product['f_id']; ?>" 
-                                        class="fas fa-heart" 
-                                        style="color: <?php echo $isInWishlist ? "rgb(255, 0, 0)" : "rgb(155, 155, 155)"; ?>; font-size: 25px; cursor: pointer;"
-                                        onclick="toggleWishlist(<?php echo $_SESSION['iduser']; ?>, <?php echo $product['f_id']; ?>)">
-                                    </i>
-                                </div>
 
-                                <div class="quantity">
-                                        <p>stock: <?php echo htmlspecialchars($product['f_quantity']); ?></p>
-                                </div>
-                
-                                <div class="desk">
-                                        <h5><?php echo htmlspecialchars($product['f_pakaian']); ?></h5>
-                                    <div class="size">
-                                        <p>size: <?php echo htmlspecialchars($product['f_ukuran']); ?></p>
+                                    <div class="desk">
+                                            <h5><?php echo htmlspecialchars($product['f_pakaian']); ?></h5>
                                     </div>
-                                </div>
 
-                                <div class="rattingprice">
-                                    <div class="ratting">
-                                        <?php for ($i = 0; $i < $product['f_rating']; $i++): ?>
-                                                    <i class="fas fa-star" style="color: rgb(252, 186, 3);"></i>
-                                        <?php endfor; ?>
-                                        <?php if ($product['f_rating'] < 5): ?>
-                                            <?php for ($i = 0; $i < 5 - $product['f_rating']; $i++): ?>
-                                                <i class="far fa-star" style="color: rgb(252, 186, 3);"></i>
+                                    <div class="rattingprice">
+                                        <div class="ratting">
+                                            <?php for ($i = 0; $i < $product['f_rating']; $i++): ?>
+                                                        <i class="fas fa-star" style="color: rgb(252, 186, 3);"></i>
                                             <?php endfor; ?>
-                                        <?php endif; ?>
+                                            <?php if ($product['f_rating'] < 5): ?>
+                                                <?php for ($i = 0; $i < 5 - $product['f_rating']; $i++): ?>
+                                                    <i class="far fa-star" style="color: rgb(252, 186, 3);"></i>
+                                                <?php endfor; ?>
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <div class="price">
+                                            <p>Rp <?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
+                                        </div>
                                     </div>
 
-                                    <div class="price">
-                                        <p>Rp <?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
-                                    </div>
-                                </div>
-
-                                <div class="btn-cart-details">
-                                    <div class="cart">
-                                    <form method="POST" action="">
-                                        <input type="hidden" name="product_id" value="<?php echo $product['f_id']; ?>">
-                                        <button type="submit" name="add_to_cart">
-                                            <i class="fas fa-shopping-cart"></i> Add to Cart
-                                        </button>
-                                    </form>
-                                    </div>
-                                    <div class="details">
-                                        <button><a href="produk.php?id=<?php echo urlencode($product['f_id']);?>"><i class="fas fa-shopping-bag"></i> Details</a></button>
+                                    <div class="btn-cart-details">
+                                        <div class="cart">
+                                            <button type="button" onclick='showPopup(<?php 
+                                                echo json_encode([
+                                                    "id" => $product["f_id"],
+                                                    "name" => $product["f_pakaian"],
+                                                    "colors" => $product["colors"],
+                                                    "sizes" => $product["ukuran"]
+                                                ], JSON_HEX_APOS | JSON_HEX_QUOT); 
+                                            ?>)'>
+                                                <i class="fas fa-shopping-cart"></i> Add to Cart
+                                            </button>
+                                        </div>
+                                        <div class="details">
+                                            <button><a href="produk.php?id=<?php echo urlencode($product['f_id']);?>"><i class="fas fa-shopping-bag"></i> Details</a></button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
     </div>
-
+    <div id="cartPopup" class="popup-2" style="display: none;">
+        <div class="popup-content">
+            <form id="cartForm" method="POST" action="">
+                <input type="hidden" name="product_id" id="popup_product_id">
+                <h3 id="popup_product_name"></h3>
+                <div class="options">
+                    <div class="option">
+                        <label>Pilihan Warna:</label>
+                        <div class="color-product2" id="popup_colors">
+                           
+                        </div>
+                    </div>
+                    <div class="option">
+                        <label>Ukuran:</label>
+                        <div class="option-buttons" id="popup_sizes">
+                       
+                        </div>
+                    </div>
+                </div>
+                <div class="cart">
+                    <button type="submit" name="add_to_cart" class="checkout-btn">
+                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                    </button>
+                    <button type="button" onclick="closePopup()" class="cancel-btn" style="background-color: #f44336;">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>  
+    </div>
 
 <script>
     function toggleWishlist(userId, itemId) {
@@ -210,6 +261,58 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
         .catch(error => {
             console.error('Error:', error);
         });
+    }
+
+    function showPopup(productData) {
+        const popup = document.getElementById('cartPopup');
+        const popupColors = document.getElementById('popup_colors');
+        const popupSizes = document.getElementById('popup_sizes');
+        const productIdInput = document.getElementById('popup_product_id');
+        const productNameElement = document.getElementById('popup_product_name');
+
+        productIdInput.value = productData.id;
+        productNameElement.textContent = productData.name;
+
+        popupColors.innerHTML = '';
+        popupSizes.innerHTML = '';
+
+        productData.colors.split(',').forEach((color, index) => {
+            const colorTrim = color.trim();
+            const label = document.createElement('label');
+            const radioId = `color_${productData.id}_${index}`;
+            
+            label.innerHTML = `
+                <input type="radio" id="${radioId}" name="color" value="${colorTrim}" required>
+                <img src="public/images/${colorTrim}" alt="Color ${colorTrim}">
+            `;
+            popupColors.appendChild(label);
+        });
+
+        productData.sizes.split(',').forEach((size, index) => {
+            const sizeTrim = size.trim();
+            const label = document.createElement('label');
+            const radioId = `size_${productData.id}_${index}`;
+            
+            label.className = 'size-label';
+            label.innerHTML = `
+                <input type="radio" id="${radioId}" name="size" value="${sizeTrim}" required>
+                <span class="size-text">${sizeTrim}</span>
+            `;
+            popupSizes.appendChild(label);
+        });
+
+        popup.style.display = 'flex';
+    }
+
+    function closePopup() {
+        document.getElementById('cartPopup').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        const popup = document.getElementById('cartPopup');
+        if (event.target === popup) {
+            closePopup();
+        }
     }
 </script>
 </body>

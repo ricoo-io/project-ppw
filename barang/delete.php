@@ -5,9 +5,9 @@ $db = new dbcontroller;
 if (isset($_GET['id'])) {
     $id = $_GET['id'];
 
-    $sql = "DELETE FROM t_barang WHERE f_id=$id ORDER BY f_id DESC LIMIT 1";
-
-    $db->runSQL($sql);
+    $sql_barang = "DELETE FROM t_barang WHERE f_id = $id";
+    $db->runSQL($sql_barang);
 
     header("Location: select.php");
 }
+?>

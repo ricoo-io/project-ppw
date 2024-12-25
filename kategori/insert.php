@@ -1,72 +1,161 @@
 <?php
     require_once "../dbcontroller.php";
     $db = new dbcontroller;
+    session_start();
+
+    $user = $_SESSION['email'];
+    if (isset($_GET['log'])) {
+        session_destroy();
+        header("location:login.php");
+    }
+    // $notification='';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Layout</title>
-    <link rel="stylesheet" href="../css/kelola.css">
-    <link rel="icon" href="../public/images/logo2.png" type="image/gif" sizes="16x16">
-    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
-
-<body>
-    <nav>
-        <div class="img">
-            <a href="#"><img src="../public/images/logo_nobg2.png" alt="" style="height: 50px; "></a>
-        </div>
-        
-        <ul>
-            <li><a href="../index.php"><i class="fas fa-home"></i> Home</a></li>
-            <li><a href="../cart.php"><i class="fas fa-shopping-cart"></i> Cart</a></li>
-            <li><a href="../logout.php" ><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-            <li><a href="../profile.php" class="profile-icon"></a></li>
-        </ul>
-        
-    </nav>
-
-    <div class="sidebar">
-        <div class="sidebar-buttons">
-            <a href="select.php"><button class="sidebar-button">Kategori</button></a>
-            <a href="../barang/select.php"><button class="sidebar-button">Barang</button></a>
-            <a href="../profile/select.php"><button class="sidebar-button">Profile</button></a>
-        </div>
-    </div>
-
-
-    <div class="main-content">
-        <div class="content-header">
-            <h2>Insert Kategori</h2>
-        </div>
-
-        <div class="form-container">
-            <form action="" method="post">
-                <div class="form-group">
-                    <label for="kategori">Kategori</label>
-                    <input type="text" id="kategori" name="kategori" required placeholder="Masukkan kategori" class="form-input">
-                </div>
-
-                <div class="form-group">
-                    <button type="submit" name="simpan" class="btn-submit">Simpan</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</body>
-</html>
 
 <?php
 if (isset($_POST['simpan'])) {
     $kat = $_POST['kategori'];
+    $gam = $_FILES['gambar']['name'];
+    $temp = $_FILES['gambar']['tmp_name'];
 
-    $sql = "INSERT INTO t_kategori VALUES (NULL,'$kat',NULL)";
-    $db->runSQL($sql);
-
-    header("Location: select.php");
-    exit();
+    if (empty($gam)) {
+        echo "<h4>Gambar Kosong, Tolong isi Gambar</h4>";
+    }else{
+        $sql = "INSERT INTO t_kategori VALUES (NULL,'$kat','$gam')";
+        move_uploaded_file($temp, '../public/images/'.$gam);
+        $db->runSQL($sql);
+        // $notification='Kategori Berhasil Ditambahkan';
+        header("Location: select.php");
+        exit();
+    }
 }
 ?>
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Category - SB Admin</title>
+        <link rel="icon" href="public/images/logo2.png" type="image/gif" sizes="16x16">
+        <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+        <link href="../css/styless.css" rel="stylesheet" />
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    </head>
+
+    <body class="sb-nav-fixed">
+        
+        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+            <!-- Navbar Brand-->
+            <a class="navbar-brand ps-2" href="..\index.php"><img src="../public/images/logobaru.png" alt="" style="height: 48px;"></a>
+            <!-- Sidebar Toggle-->
+            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
+           
+            <!-- Navbar-->
+            <ul class="navbar-nav ms-auto ms-md-8 me-3 me-lg-4">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="?log=logout">Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+
+        <div id="layoutSidenav">
+            <div id="layoutSidenav_nav">
+                <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                    <div class="sb-sidenav-menu">
+                        <div class="nav">
+                            <div class="sb-sidenav-menu-heading">Core</div>
+                            <a class="nav-link" href="..\kelolaproduk.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                Dashboard
+                            </a>
+                            
+                            <a class="nav-link" href="select.php">
+                                <div class="sb-nav-link-icon"><i class="fa-solid fa-list"></i></div>
+                                Category
+                            </a>
+                            <a class="nav-link" href="../barang/select.php">
+                                <div class="sb-nav-link-icon"><i class="fa-solid fa-box"></i></div>
+                                Product
+                            </a>
+
+                            <a class="nav-link" href="../user/select.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-user"></i></div>
+                                User
+                            </a>
+
+                            <a class="nav-link" href="../order/select.php">
+                                <div class="sb-nav-link-icon"><i class="fa-solid fa-cart-shopping"></i></div>
+                                Order
+                            </a>
+
+                            <a class="nav-link" href="../diskon/select.php">
+                                <div class="sb-nav-link-icon"><i class="fa-solid fa-tag"></i></div>
+                                Discount
+                            </a>
+                            
+                        </div>
+                    </div>
+                </nav>
+            </div>
+            
+            <div id="layoutSidenav_content">
+                <main>
+                    <div class="container-fluid px-5">
+                        <h1 class="mt-4">Insert Category</h1>
+
+                            <div class="form-container">
+                                <form ction="" method="post" enctype="multipart/form-data">
+                                    <div class="form-group">
+                                        <label for="kategori">Kategori</label>
+                                        <input type="text" id="kategori" name="kategori" required placeholder="Masukkan kategori" class="form-input">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="gambar">Gambar</label>
+                                        <input style="padding-top: 14px;" type="file" id="gambar" name="gambar" class="form-input">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <button type="submit" name="simpan" class="btn-submit">Simpan</button>
+                                    </div>
+
+                                    <?php if (!empty($notification)): ?>
+                                        <p class="notification"><?php echo $notification; ?></p> 
+                                    <?php endif; ?>
+
+                                </form>
+                            </div>
+                    </div>
+
+                </main>
+
+                <footer class="py-4 bg-light mt-auto">
+                    <div class="container-fluid px-4">
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <div class="text-muted">Copyright &copy; KnowDays PPW 2024</div>
+                            <div>
+                                <a href="#">Privacy Policy</a>
+                                &middot;
+                                <a href="#">Terms &amp; Conditions</a>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+        <script src="../js/scripts.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+        <script src="assets/demo/chart-area-demo.js"></script>
+        <script src="assets/demo/chart-bar-demo.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
+        <script src="../js/datatables-simple-demo.js"></script>
+    </body>
+</html>
