@@ -6,7 +6,7 @@
     $user = $_SESSION['email'];
     if (isset($_GET['log'])) {
         session_destroy();
-        header("location:login.php");
+        header("location:../login.php");
     }
 
     if (isset($_GET['id'])) {
@@ -18,6 +18,7 @@
         $gambarlama = $item['f_gambar'];
     }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -48,6 +49,7 @@
                     <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                         <li><a class="dropdown-item" href="?log=logout">Logout</a></li>
+                        <li><a class="dropdown-item" href="../index.php">Halaman Utama</a></li>
                     </ul>
                 </li>
             </ul>
@@ -83,19 +85,18 @@
                                 Order
                             </a>
 
+                            <a class="nav-link" href="../orderdetail/select.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-luggage-cart"></i></div>
+                                Detail Orders
+                            </a>
+
                             <a class="nav-link" href="../diskon/select.php">
-                                <div class="sb-nav-link-icon"><i class="fa-solid fa-tag"></i></div>
-                                Discount
+                                <div class="sb-nav-link-icon"><i class="fas fa-tag"></i></div>
+                                Diskon
                             </a>
                             
                         </div>
                     </div>
-
-                    <div class="sb-sidenav-footer">
-                        <div class="small">Logged in as:</div>
-                        Start Bootstrap
-                    </div>
-
                 </nav>
             </div>
             

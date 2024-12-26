@@ -7,7 +7,7 @@
     $user = $_SESSION['email'];
     if (isset($_GET['log'])) {
         session_destroy();
-        header("location:login.php");
+        header("location:..\login.php");
     }
 
     $jumlahdata = $db->rowCOUNT("SELECT f_id FROM t_user");
@@ -55,6 +55,7 @@
                     <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                         <li><a class="dropdown-item" href="?log=logout">Logout</a></li>
+                        <li><a class="dropdown-item" href="../index.php">Halaman Utama</a></li>
                     </ul>
                 </li>
             </ul>
@@ -90,11 +91,15 @@
                                 Order
                             </a>
 
-                            <a class="nav-link" href="../diskon/select.php">
-                                <div class="sb-nav-link-icon"><i class="fa-solid fa-tag"></i></div>
-                                Discount
+                            <a class="nav-link" href="../orderdetail/select.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-luggage-cart"></i></div>
+                                Detail Orders
                             </a>
-                            
+
+                            <a class="nav-link" href="../diskon/select.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tag"></i></div>
+                                Diskon
+                            </a>
                         </div>
                     </div>
                 </nav>
@@ -114,7 +119,7 @@
                         <div class="card mb-4">
                             <div class="card-header">
                                 <i class="fas fa-table me-1"></i>
-                                DataTable Product
+                                DataTable user
                             </div>
                             
                             <div class="card-body">

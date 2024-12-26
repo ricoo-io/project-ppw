@@ -6,7 +6,7 @@
     $user = $_SESSION['email'];
     if (isset($_GET['log'])) {
         session_destroy();
-        header("location:login.php");
+        header("location:../login.php");
     }
  
     if (isset($_GET['id'])) {
@@ -99,7 +99,7 @@ if (isset($_POST['simpan'])) {
         
         <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
             <!-- Navbar Brand-->
-            <a class="navbar-brand ps-2" href="..\index.php"><img src="../public/images/logobaru.png" alt="" style="height: 48px;"></a>
+            <a class="navbar-brand ps-2" href="..\kelolaproduk.php"><img src="../public/images/logobaru.png" alt="" style="height: 48px;"></a>
             <!-- Sidebar Toggle-->
             <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
            
@@ -109,6 +109,7 @@ if (isset($_POST['simpan'])) {
                     <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                         <li><a class="dropdown-item" href="?log=logout">Logout</a></li>
+                        <li><a class="dropdown-item" href="../index.php">Halaman Utama</a></li>
                     </ul>
                 </li>
             </ul>
@@ -134,7 +135,7 @@ if (isset($_POST['simpan'])) {
                                 Product
                             </a>
 
-                            <a class="nav-link" href="../user/select.php">
+                            <a class="nav-link" href="../profile/select.php">
                                 <div class="sb-nav-link-icon"><i class="fas fa-user"></i></div>
                                 User
                             </a>
@@ -144,17 +145,17 @@ if (isset($_POST['simpan'])) {
                                 Order
                             </a>
 
-                            <a class="nav-link" href="../diskon/select.php">
-                                <div class="sb-nav-link-icon"><i class="fa-solid fa-tag"></i></div>
-                                Discount
+                            <a class="nav-link" href="../orderdetail/select.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-luggage-cart"></i></div>
+                                Detail Orders
                             </a>
-                            
-                        </div>
-                    </div>
 
-                    <div class="sb-sidenav-footer">
-                        <div class="small">Logged in as:</div>
-                        Start Bootstrap
+                            <a class="nav-link" href="../diskon/select.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tag"></i></div>
+                                Diskon
+                            </a>
+
+                        </div>
                     </div>
 
                 </nav>
@@ -243,10 +244,6 @@ if (isset($_POST['simpan'])) {
                                 <div class="form-group">
                                     <button type="submit" name="simpan" class="btn-submit">Simpan</button>
                                 </div>
-
-                                <!-- <?php if (!empty($notification)): ?>
-                                        <p class="notification"><?php echo $notification; ?></p> 
-                                <?php endif; ?> -->
 
                             </form>
                         </div>

@@ -3,6 +3,32 @@ session_start();
 require_once('dbcontroller.php');
 $db = new dbcontroller();
 
+$sql = "SELECT COUNT(*) as count FROM t_cart WHERE f_iduser = " . $_SESSION['iduser'];
+$result = $db->getITEM($sql);
+if ($result['count'] == 0) {
+    header("Location: cart.php");
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
+    
+        $shipping_method = $_POST['shipping_method'];
+        $payment_method = $_POST['payment_method'];
+        $total_amount = $_POST['grand_total'];
+        $address = $_POST['address'];
+
+        $orderId = $db->createOrder(
+            $_SESSION['iduser'],
+            $total_amount,
+            $shipping_method,
+            $payment_method,
+            $address
+        );
+
+        header("Location: thankyou.php?order_id=$orderId");
+        exit;
+
+}
 
 $iduser = $_SESSION['iduser'] ?? null;
 if (!$iduser || !isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
@@ -11,19 +37,18 @@ if (!$iduser || !isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true)
 }
 
 
-$sql = "SELECT t_cart.*, t_barang.f_pakaian, t_barang.f_gambar, t_barang.f_harga, 
+$sql = "SELECT t_cart.*, t_barang.f_pakaian, t_barang.f_gambar, t_barang.f_harga,t_barang.f_diskon,
         t_barang.f_quantity as stock
         FROM t_cart
         JOIN t_barang ON t_cart.f_idbarang = t_barang.f_id
         WHERE t_cart.f_iduser = $iduser";
     $cartItems = $db->getALL($sql,);   
 
-// Initialize totals
 $totalPrice = 0;
 $totalQuantity = 0;
 foreach ($cartItems as $item) {
     $totalQuantity += $item['f_quantity'];
-    $totalPrice += $item['f_harga'] * $item['f_quantity'];
+    $totalPrice += ($item['f_harga']*(1 - $item['f_diskon']/100)) * $item['f_quantity'];
 }
 ?>
 <!DOCTYPE html>
@@ -33,6 +58,7 @@ foreach ($cartItems as $item) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Knowdays - Checkout</title>
     <link rel="stylesheet" href="css/checkout.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="icon" href="public/images/logo2.png" type="image/png" sizes="16x16">
 </head>
 <body>
@@ -53,7 +79,6 @@ foreach ($cartItems as $item) {
 </nav>
 
 <div class="container">
-    <!-- Left Section -->
     <div class="leftsect">
         <div class="box-address">
             <h2>Shipping Address</h2>
@@ -79,35 +104,34 @@ foreach ($cartItems as $item) {
                             </div>
                         </div>
                     </div>
-                    <p>Rp <?php echo number_format($item['f_harga']*$item['f_quantity'], 0, ',', '.'); ?></p>
+                    <p>Rp <?php echo number_format(($item['f_harga']* (1 - $item['f_diskon']/100))*$item['f_quantity'], 0, ',', '.'); ?></p>
                 </div>
             <?php endforeach; ?>
         </div>
 
         <div class="shipping">
             <h2>Shipping Method</h2>
-            <select id="shipping" onchange="updateShipping(this.value)">
-                <option value="16500">Economy (Rp 16.500)</option>
-                <option value="25000">Regular (Rp 25.000)</option>
-                <option value="40000">Express (Rp 40.000)</option>
+            <select id="shipping" name="shipping_method" onchange="updateShipping(this.value)">
+                <option value="Economy">Economy (Rp 16.500)</option>
+                <option value="Regular">Regular (Rp 25.000)</option>
+                <option value="Express">Express (Rp 40.000)</option>
             </select>
         </div>
 
     </div>
 
-    <!-- Right Section -->
     <div class="rightsect">
         <div class="checkout-summary">
-            <form action="POST">
+            <form method="POST">
                 <h4>Payment Method</h4>
                 <div class="payment-options">
                     <div class="payment-option">
-                        <input type="radio" name="payment" id="COD" value="COD" checked>
-                        <label for="gopay">COD</label>
+                        <input type="radio" name="payment_method" id="COD" value="COD" checked>
+                        <label for="COD">COD</label>
                     </div>
                     <div class="payment-option">
-                        <input type="radio" name="payment" id="Virtual Account" value="Virtual Account" checked>
-                        <label for="gopay">Virtual Account</label>
+                        <input type="radio" name="payment_method" id="Virtual_Account" value="Virtual Account">
+                        <label for="Virtual_Account">Virtual Account</label>
                     </div>
                 </div>
 
@@ -123,17 +147,24 @@ foreach ($cartItems as $item) {
                 </div>
                 <div class="prices">
                     <p>Service Charge </p>
-                    <p>Rp <?php echo number_format(2500, 0, ',', '.'); ?></p>
+                    <p>Rp <?php echo number_format(5000, 0, ',', '.'); ?></p>
                 </div>
 
                 <div class="line"></div>
                 <div class="grand-total">
                     <p>Grand Total: </p> 
                     <p id="grand-total">
-                        Rp <?php echo number_format($totalPrice + 16500 + 2500, 0, ',', '.'); ?>
+                        Rp <?php echo number_format($totalPrice + 16500 + 5000, 0, ',', '.'); ?>
                     </p>
                 </div>
-                <button class="checkout-button">Checkout</button>
+                <input type="hidden" name="grand_total" id="grand_total_input" value="<?php echo $totalPrice + 16500 + 5000; ?>">
+                <input type="hidden" name="address" id="address_input" value="<?php echo htmlspecialchars($_SESSION['address']); ?>">
+                <input type="hidden" name="shipping_method" id="shipping_method_input" value="Economy">
+                <button type="submit" name="checkout" class="checkout-button">Checkout</button>
+                
+                <?php if (isset($error)): ?>
+                    <p class="error"><?php echo $error; ?></p>
+                <?php endif; ?>
             </form>
         </div>
     </div>
@@ -157,19 +188,27 @@ foreach ($cartItems as $item) {
     function saveAddress() {
         const addressInput = document.getElementById('address-input').value;
         document.getElementById('address-text').textContent = addressInput;
+        document.getElementById('address_input').value = addressInput;
         toggleModal();
     }
 
     function updateShipping(value) {
-        const shippingFee = parseInt(value);
+        const shippingFee = {
+            'Economy': 16500,
+            'Regular': 25000,
+            'Express': 40000
+        }[value];
+        
         const subtotal = <?php echo $totalPrice; ?>;
-        const serviceCharge = 2500;
+        const serviceCharge = 5000;
         const total = subtotal + shippingFee + serviceCharge;
 
         document.getElementById('shipping-fee').textContent = 
             'Rp ' + shippingFee.toLocaleString('id-ID');
         document.getElementById('grand-total').textContent = 
             'Rp ' + total.toLocaleString('id-ID');
+        document.getElementById('grand_total_input').value = total;
+        document.getElementById('shipping_method_input').value = value;
     }
 </script>
 </body>

@@ -16,6 +16,7 @@ $sql = "SELECT
         t_barang.f_gambar, 
         t_barang.f_harga, 
         t_barang.f_rating,
+        t_barang.f_diskon,
         t_barang.f_quantity,  
         t_ukuran.f_ukuran,    
         t_kategori.f_kategori, 
@@ -61,8 +62,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
     header('Location: search.php');
     exit;
 }
-
-
 
 ?>
 
@@ -120,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
 
             <div class="box-container">
                 
-                <?php foreach (array_slice($categories, 0, 7)  as $category): ?>
+                <?php foreach (array_slice($categories, 0, 8)  as $category): ?>
                     <div class="box">
                         <a href="kategori.php?id=<?php echo urlencode($category['f_id']);?>">
                             <img src="public/images/<?php echo htmlspecialchars($category['f_gambar']); ?>" alt="<?php echo htmlspecialchars($category['f_gambar']); ?>">
@@ -177,18 +176,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
 
                                 <div class="rattingprice">
                                     <div class="ratting">
-                                        <?php for ($i = 0; $i < $product['f_rating']; $i++): ?>
-                                                    <i class="fas fa-star" style="color: rgb(252, 186, 3);"></i>
-                                        <?php endfor; ?>
-                                        <?php if ($product['f_rating'] < 5): ?>
-                                            <?php for ($i = 0; $i < 5 - $product['f_rating']; $i++): ?>
-                                                <i class="far fa-star" style="color: rgb(252, 186, 3);"></i>
-                                            <?php endfor; ?>
-                                        <?php endif; ?>
+                                        <?php $sql = "SELECT AVG(f_rating) AS rating FROM t_review WHERE f_idbarang = " . $product['f_id'];
+                                        $result = $db->getITEM($sql);
+                                        $rating = $result['rating'] ?? 0; ?>
+                                        <span style="display: inline-flex; align-items: center;">
+                                            <i class="fas fa-star" style="color: rgb(252, 186, 3);"></i> 
+                                            <p style="margin: 0; padding-left: 5px; color=#a1a1a1;">(<?php echo number_format($rating, 1); ?>)</p>
+                                        </span>   
                                     </div>
 
                                     <div class="price">
-                                        <p>Rp <?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
+                                        <?php if ($product['f_diskon'] > 0): ?>
+                                            <div class="price-container">
+                                                <p class="original-price">Rp <?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
+                                                <p class="discounted-price">
+                                                    Rp <?php 
+                                                    $discounted_price = $product['f_harga'] * (1 - $product['f_diskon']/100);
+                                                    echo number_format($discounted_price, 0, ',', '.'); 
+                                                    ?>
+                                                </p>
+                                                <span class="discount-badge">-<?php echo $product['f_diskon']; ?>%</span>
+                                            </div>
+                                        <?php else: ?>
+                                            <p>Rp <?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
 

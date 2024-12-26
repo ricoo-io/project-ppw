@@ -12,7 +12,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 
 $sql = "SELECT t_cart.f_id, t_barang.f_pakaian, t_barang.f_gambar, t_barang.f_harga, 
         t_cart.f_quantity, t_cart.f_total_harga, t_cart.f_iduser, t_cart.f_idbarang, 
-        t_cart.f_ukuran, t_cart.f_warna, t_barang.f_quantity as stock
+        t_barang.f_diskon, t_cart.f_ukuran, t_cart.f_warna, t_barang.f_quantity as stock
         FROM t_cart
         JOIN t_barang ON t_cart.f_idbarang = t_barang.f_id
         WHERE t_cart.f_iduser = $iduser";
@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/index.css">
-    <link rel="icon" href="../public/images/logo2.png" type="image/gif" sizes="16x16">
+    <link rel="icon" href="public\images\logo.png" type="image/gif" sizes="16x16">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="css/cart.css">
     <title>KnowDays | Your Cart</title>
@@ -103,13 +103,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
                             <div class="item-details">
                                 <h4><?= htmlspecialchars($item['f_pakaian']) ?></h4>
                                 <div class="product-color">
+                                <img src="public/images/<?= htmlspecialchars($item['f_warna']); ?>" alt="color">
                                     <p>Size: <?= htmlspecialchars($item['f_ukuran']); ?></p>
-                                    <img src="public/images/<?= htmlspecialchars($item['f_warna']); ?>" alt="color">
                                 </div>
-                                
                             </div>
                             <div class="cart-item-controls">
-                                <p>Rp <?= number_format($item['f_harga'], 0, ',', '.') ?></p>
+                            <?php if ($item['f_diskon'] > 0): ?>
+                                <span class="original-price">Rp<?php echo number_format($item['f_harga'], 0, ',', '.'); ?></span>
+                                <div>
+                                <span class="discount-badge-2">-<?php echo $item['f_diskon']; ?>%</span>
+                                    <span class="discounted-price" data-original-price="Rp<?php echo $item['f_harga']; ?>">Rp<?php echo number_format($item['f_harga'] * (1 - $item['f_diskon']/100), 0, ',', '.'); ?></span>
+                                </div>
+                            <?php else: ?>
+                                <span class="discounted-price">Rp<?php echo number_format($item['f_harga'], 0, ',', '.'); ?></span>
+                            <?php endif; ?>
                                 <form method="POST" action="cart.php" class="quantity-form">
                                     <input type="hidden" name="cart_id" value="<?= $item['f_id'] ?>">
                                     <input type="hidden" id="stock-<?= $item['f_id'] ?>" value="<?= $item['stock'] ?>">
@@ -135,13 +142,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
                     <div id="total-items"><?= $totalQuantity ?> Items</div>
                     <?php if (!empty($cartItems)) { ?>
                         <?php foreach ($cartItems as $item) {
-                            $totalPrice += $item['f_harga'] * $item['f_quantity'];
+                            $totalPrice += ($item['f_harga']*(1 - $item['f_diskon']/100)) * $item['f_quantity'];
                         }?>
                     <div id="total-price">Total: Rp <?= number_format($totalPrice, 0, ',', '.') ?></div>
                     <?php } ?>
                 </div>
                 <div class="checkout-buttons">
-                    <a href="Checkout.php">Check Out</a>
+                    <a href="<?php echo !empty($cartItems) ? 'Checkout.php' : 'javascript:void(0)'; ?>" 
+                       class="<?php echo !empty($cartItems) ? 'checkout-enabled' : 'checkout-disabled'; ?>">
+                        Check Out
+                    </a>
                 </div>
             </div>
         </div>
@@ -152,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
 
 function toggleWishlist(userId, itemId) {
         const icon = document.getElementById(`heart-icon-${itemId}`);
-        const isInWishlist = icon.style.color === "rgb(255, 0, 0)"; // Check if already liked
+        const isInWishlist = icon.style.color === "rgb(255, 0, 0)"; 
 
         fetch('toggle-wishlist.php', {
             method: 'POST',
@@ -179,40 +189,52 @@ function toggleWishlist(userId, itemId) {
         });
     }
 
-function updateQuantity(cartId, change, price) {
+    function updateQuantity(cartId, change, price) {
     const quantityInput = document.getElementById(`quantity-${cartId}`);
     const stockInput = document.getElementById(`stock-${cartId}`);
     const stock = parseInt(stockInput.value);
+
+    const cartItem = document.querySelector(`#quantity-${cartId}`).closest('.cart-item');
+    const discountElement = cartItem.querySelector('.discount-badge-2');
+    const discount = discountElement ? parseFloat(discountElement.textContent.replace('-', '').replace('%', '')) / 100 : 0;
+
     let newQuantity = parseInt(quantityInput.value) + change;
-    
-    // Prevent exceeding stock limit or going below 1
+
     if (newQuantity < 1) newQuantity = 1;
     if (newQuantity > stock) {
         alert('Cannot exceed available stock!');
         newQuantity = stock;
     }
-    
-    
-    // Update the display
+
     quantityInput.value = newQuantity;
-    
-    // Calculate new totals
+
+    const discountedPrice = price * (1 - discount);
+    const itemTotalPrice = discountedPrice * newQuantity;
+
+    const itemTotalElement = cartItem.querySelector('.item-total-price');
+    if (itemTotalElement) {
+        itemTotalElement.textContent = `Rp ${itemTotalPrice.toLocaleString('id-ID')}`;
+    }
+
     let totalItems = 0;
     let totalPrice = 0;
-    
-    // Get all quantity inputs
-    document.querySelectorAll('input[type="number"]').forEach(input => {
-        totalItems += parseInt(input.value);
-        const itemPrice = parseFloat(input.closest('.cart-item')
-            .querySelector('.cart-item-controls p').textContent.replace(/[^0-9]/g, ''));
-        totalPrice += itemPrice * parseInt(input.value);
+
+    document.querySelectorAll('.cart-item').forEach(item => {
+        const quantity = parseInt(item.querySelector('input[type="number"]').value);
+
+        const itemDiscountElement = item.querySelector('.discount-badge-2');
+        const itemDiscount = itemDiscountElement ? parseFloat(itemDiscountElement.textContent.replace('-', '').replace('%', '')) / 100 : 0;
+
+        const originalPrice = parseFloat(item.querySelector('.discounted-price').dataset.originalPrice.replace(/[^\d.]/g, ''));
+        const finalPrice = originalPrice * (1 - itemDiscount);
+
+        totalItems += quantity;
+        totalPrice += finalPrice * quantity;
     });
-    
-    // Update summary
+
     document.getElementById('total-items').textContent = `${totalItems} Items`;
     document.getElementById('total-price').textContent = `Total: Rp ${totalPrice.toLocaleString('id-ID')}`;
-    
-    // Send update to server
+
     fetch('cart.php', {
         method: 'POST',
         headers: {

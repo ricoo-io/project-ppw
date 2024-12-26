@@ -59,6 +59,7 @@ body {
 .product-image img {
     width: 100%;
     max-width: 300px;
+    max-height: 350px;
     object-fit: cover;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -70,6 +71,7 @@ body {
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     flex: 2;
+    height: 350px;
 }
 
 .product-info h4 {
@@ -249,4 +251,130 @@ body {
     outline: 2px solid #868686; 
     padding: 5px 10px;
     border-radius: 5px;
+}
+
+.review-container {
+    max-width: 1160px;
+    margin: 20px auto;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.overall-rating {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 2.2em; 
+    margin-bottom: 20px;
+}
+
+h1 {
+    text-align: center;  
+    font-size: 24px;     
+    margin-bottom: 20px;  
+}
+
+
+.rating-value {
+    font-weight: bold;
+    color: #333;
+    font-size: 1.2em;
+}
+
+.stars img {
+    width: 30px; 
+    height: 30px;
+}
+
+.review-count {
+    color: #555;
+    font-size: 0.9em; 
+}
+
+.review-section {
+    margin-top: 20px;
+}
+
+.review {
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+}
+
+.review:last-child {
+    border-bottom: none;
+}
+
+.review .username {
+    font-weight: bold;
+}
+
+.review .rating {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.review .stars {
+    color: #FFD700;
+}
+
+.review .rating-value {
+    font-size: 1em;
+    color: #555;
+}
+
+.review .date {
+    font-size: 0.9em;
+    color: #888;
+    margin: 10px 0 0 0;
+}
+
+.review .comment {
+    font-size: 0.9em;
+    color: #555;
+}
+
+.profile-review {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.profile-review img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.discount-price {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 12px;
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: #888;
+    font-size: 18px;
+}
+
+.discounted-price {
+    font-weight: bold;
+    font-size: 24px;
+    color: black;
+}
+
+.discount-badge-2{
+    right: 0;
+    background-color: #ff0000;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: bold;
 }

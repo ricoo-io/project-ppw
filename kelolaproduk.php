@@ -4,15 +4,28 @@
     $db = new dbcontroller;
     session_start();
 
+    if (!isset($_SESSION['email'])) {
+        header("Location: login.php");
+        exit;
+    }
+    
     $user = $_SESSION['email'];
+    $userData = $db->getALL("SELECT * FROM t_user WHERE email = '$user'");
+    
+    if (empty($userData) || $userData[0]['f_peran'] !== 'admin') {
+        header("Location: login.php");
+        exit;
+    }
+
     if (isset($_GET['log'])) {
         session_destroy();
         header("location:login.php");
     }
 
-    $jumlahBarang = $db->rowCOUNT("SELECT f_id FROM t_barang");
-    $jumlahKategori = $db->rowCOUNT("SELECT f_id FROM t_kategori");
-    $jumlahUser = $db->rowCOUNT("SELECT f_id FROM t_user");
+    $jumlahPackaging = $db->rowCOUNT("SELECT f_id FROM t_orders WHERE f_status = 'Packaging'");
+    $jumlahShipping = $db->rowCOUNT("SELECT f_id FROM t_orders WHERE f_status = 'Shipping'");
+    $jumlahArrived = $db->rowCOUNT("SELECT f_id FROM t_orders WHERE f_status = 'Arrived'");
+    $jumlahDone = $db->rowCOUNT("SELECT f_id FROM t_orders WHERE f_status = 'Completed'");
 
     $jumlahdata = $db->rowCOUNT("SELECT f_id FROM t_user");
     $banyak = 15;
@@ -25,7 +38,7 @@
         $mulai = 0;
     }
 
-    $sql = "SELECT * FROM t_user ORDER BY f_id DESC LIMIT $mulai, $banyak";
+    $sql = "SELECT * FROM t_user ORDER BY f_id ASC LIMIT $mulai, $banyak";
     $row = $db->getALL($sql);
     $no = 1 + $mulai;
 ?>
@@ -47,24 +60,15 @@
     <body class="sb-nav-fixed">
         
         <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
-            <!-- Navbar Brand-->
-            <a class="navbar-brand ps-2" href="index.php"><img src="public/images/logobaru.png" alt="" style="height: 48px;"></a>
-            <!-- Sidebar Toggle-->
+            <a class="navbar-brand ps-2" href="kelolaproduk.php"><img src="public/images/logobaru.png" alt="" style="height: 48px;"></a>
             <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
-            <!-- Navbar Search
-            <form class="d-none d-md-inline-block form-inline ms-auto me-0 me-md-3 my-2 my-md-0">
-                <div class="input-group">
-                    <input class="form-control" type="text" placeholder="Search for..." aria-label="Search for..." aria-describedby="btnNavbarSearch" />
-                    <button class="btn btn-primary" id="btnNavbarSearch" type="button"><i class="fas fa-search"></i></button>
-                </div>
-            </form> -->
-
-            <!-- Navbar-->
             <ul class="navbar-nav ms-auto ms-md-8 me-3 me-lg-4">
+                <a class="nav-link" id="navbarDropdown" href="laporan.php" role="button"><i class="far fa-file-excel"></i> Laporan</a>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                         <li><a class="dropdown-item" href="?log=logout">Logout</a></li>
+                        <li><a class="dropdown-item" href="index.php">Halaman Utama</a></li>
                     </ul>
                 </li>
             </ul>
@@ -101,11 +105,16 @@
                                 Order
                             </a>
 
-                            <a class="nav-link" href="diskon/select.php">
-                                <div class="sb-nav-link-icon"><i class="fa-solid fa-tag"></i></div>
-                                Discount
+                            <a class="nav-link" href="orderdetail/select.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-luggage-cart"></i></div>
+                                Detail Orders
                             </a>
-                            
+
+                            <a class="nav-link" href="diskon/select.php">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tag"></i></div>
+                                Diskon
+                            </a>
+
                         </div>
                     </div>
                     <div class="sb-sidenav-footer">
@@ -125,41 +134,45 @@
 
                         <div class="row">
                             <div class="col-xl-3 col-md-6">
-                                <div class="card bg-primary text-white mb-4">
-                                    <div class="card-body">Barang: <?php echo $jumlahBarang; ?></div>
+                                <div class="card bg-danger text-white mb-4">
+                                <div class="card-body">Packaging: <?php echo $jumlahPackaging; ?></div>
                                     <div class="card-footer d-flex align-items-center justify-content-between">
-                                        <a class="small text-white stretched-link" href="barang/select.php">View Details</a>
+                                        <a class="small text-white stretched-link" href="order/select.php">View Details</a>
                                         <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                                     </div>
                                 </div>
                             </div>
+
                             <div class="col-xl-3 col-md-6">
                                 <div class="card bg-warning text-white mb-4">
-                                    <div class="card-body">Kategori: <?php echo $jumlahKategori; ?></div>
+                                    <div class="card-body">Shipping: <?php echo $jumlahShipping; ?></div>
                                     <div class="card-footer d-flex align-items-center justify-content-between">
-                                        <a class="small text-white stretched-link" href="kategori/select.php">View Details</a>
+                                        <a class="small text-white stretched-link" href="order/select.php">View Details</a>
                                         <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card bg-primary text-white mb-4">
+                                    <div class="card-body">Arrived: <?php echo $jumlahArrived; ?></div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="order/select.php">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                        
                             <div class="col-xl-3 col-md-6">
                                 <div class="card bg-success text-white mb-4">
-                                    <div class="card-body">User: <?php echo $jumlahUser; ?></div>
+                                    <div class="card-body">Done: <?php echo $jumlahDone; ?></div>
                                     <div class="card-footer d-flex align-items-center justify-content-between">
-                                        <a class="small text-white stretched-link" href="profile/select.php">View Details</a>
+                                        <a class="small text-white stretched-link" href="order/select.php">View Details</a>
                                         <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                                     </div>
                                 </div>
                             </div>
-                            <!-- <div class="col-xl-3 col-md-6">
-                                <div class="card bg-danger text-white mb-4">
-                                    <div class="card-body">Danger Card</div>
-                                    <div class="card-footer d-flex align-items-center justify-content-between">
-                                        <a class="small text-white stretched-link" href="#">View Details</a>
-                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                    </div>
-                                </div>
-                            </div> -->
+                            
                         </div>
                         
                         <div class="card mb-4">

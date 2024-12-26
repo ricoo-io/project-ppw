@@ -1,16 +1,26 @@
 <?php
 session_start();
-
 require_once('dbcontroller.php');   
 $db = new dbcontroller();
 
-$user_id = $_SESSION['iduser'];
 
-
-if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true || !isset($_SESSION['iduser'])) {
     header("location: login.php");
     exit;
 }
+
+$user_id = $_SESSION['iduser'];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['order_id'])) {
+        $orderId = intval($_POST['order_id']);
+        $sql = "UPDATE t_orders SET f_status = 'Completed' WHERE f_id = $orderId AND f_iduser = $user_id";
+        $db->runSQL($sql);   
+        header("Location: orders.php");
+        exit;
+    }
+}
+
 
 ?>
 
@@ -21,6 +31,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/profile.css">
+    <link rel="stylesheet" href="css/orders.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="css/index.css">
     <link rel="icon" href="public/images/logo2.png" type="image/gif" sizes="16x16">
@@ -74,119 +85,373 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
         </div>
 
         <div class="main-content">
-            <h2>Wishlist</h2>
-
+            <h1>My Orders</h1>
+            <div class="tabs">
+                <button class="tab-button" onclick="openTab(event, 'all-orders')">All Orders</button>
+                <button class="tab-button" onclick="openTab(event, 'packed')">Packaging</button>
+                <button class="tab-button" onclick="openTab(event, 'shipped')">Shipping</button>
+                <button class="tab-button" onclick="openTab(event, 'arrived')">Arrived</button>
+                <button class="tab-button" onclick="openTab(event, 'completed')">Completed</button>
+                <button class="tab-button" onclick="openTab(event, 'review')">Awaiting Review</button>
+            </div>
+            <div id="all-orders" class="tab-content">
             <?php
-            $sql = "SELECT 
-            t_barang.f_id,
-            t_barang.f_pakaian, 
-            t_barang.f_gambar, 
-            t_barang.f_harga, 
-            t_barang.f_rating,
-            t_barang.f_quantity,     
-            t_kategori.f_kategori, 
-            GROUP_CONCAT(DISTINCT t_ukuran.f_ukuran ORDER BY FIELD(t_ukuran.f_ukuran, 'S', 'M', 'L', 'XL')) AS ukuran,
-            GROUP_CONCAT(DISTINCT t_colors.f_colour) AS colors
-            FROM 
-            t_barang
-            LEFT JOIN 
-                barang_color ON t_barang.f_id = barang_color.f_idbarang
-            LEFT JOIN 
-                t_colors ON barang_color.f_idwarna = t_colors.f_id
-           LEFT JOIN 
-                    barang_ukuran ON t_barang.f_id = barang_ukuran.f_idbarang
-            LEFT JOIN 
-                t_ukuran ON barang_ukuran.f_idukuran = t_ukuran.f_id
-            LEFT JOIN 
-                t_kategori ON t_barang.f_idkategori = t_kategori.f_id 
-            INNER JOIN 
-                t_wishlist ON t_barang.f_id = t_wishlist.f_idbarang
-            WHERE 
-                t_wishlist.f_iduser = $user_id
-            GROUP BY 
-                t_barang.f_id";
-            $products = $db->getALL($sql);
-            ?>
-
-            <div class="card-wrapper">
-                <div class="card-container-2">
-                    <?php foreach ($products as $product): ?>
-                        <div class="card">
-                            <a href="produk.php?id=<?php echo urlencode($product['f_id']);?>">
-                                <img src="public/images/<?php echo htmlspecialchars($product['f_gambar']); ?>" alt="<?php echo htmlspecialchars($product['f_pakaian']); ?>">
-                            </a>
-                            <div class="card-content">
-                                <div class="color-wishlist">
-                                    <div class="color-product">
-                                        <?php 
-                                        $colorImages = explode(',', $product['colors']);
-                                        foreach ($colorImages as $colorImage): 
-                                        ?>
-                                            <img src="public/images/<?php echo htmlspecialchars(trim($colorImage)); ?>" alt="Color Image">
-                                        <?php endforeach; ?>
-                                    </div>
-                                    <?php $isInWishlist = $db->isInWishlist($_SESSION['iduser'], $product['f_id']); ?>
-                                    <i id="heart-icon-<?php echo $product['f_id']; ?>" 
-                                        class="fas fa-heart" 
-                                        style="color: <?php echo $isInWishlist ? "rgb(255, 0, 0)" : "rgb(155, 155, 155)"; ?>; font-size: 25px; cursor: pointer;"
-                                        onclick="toggleWishlist(<?php echo $_SESSION['iduser']; ?>, <?php echo $product['f_id']; ?>)">
-                                    </i>
+                $sql="SELECT * FROM t_orders WHERE f_iduser = $user_id ORDER BY f_tanggal_pembelian DESC";
+                $orders = $db->getALL($sql);
+                ?>
+                <div class="order-list">
+                    <?php if(empty($orders)): ?>
+                        <h3 style="text-align: center;">No orders found</h3>
+                        <?php else: ?>
+                            <?php $i = 0; ?>
+                            <?php foreach ($orders as $order):; ?>
+                                <div class="order">
+                                <?php
+                                    $i+=1;
+                                    $id = $order['f_id'];
+                                    $sql = "SELECT t_orderdetails.*, t_barang.f_gambar,t_barang.f_pakaian
+                                            FROM t_orderdetails
+                                            JOIN t_barang ON t_orderdetails.f_idbarang = t_barang.f_id
+                                            WHERE t_orderdetails.f_idorder = $id";
+                                    $orderDetails = $db->getALL($sql);
+                                    ?>
+                                <div class="order-header">
+                                    <h4>Order #<?php echo $order['f_id']; ?> | <?php echo $order['f_tanggal_pembelian']; ?></h4>
+                                    <p>Status: <?php echo $order['f_status']; ?></p>
                                 </div>
-
-                                <div class="quantity">
-                                        <p>stock: <?php echo htmlspecialchars($product['f_quantity']); ?></p>
+                                    <?php foreach ($orderDetails as $product): ?>
+                                        <div class="product">
+                                            <div class="product-image-placeholder">
+                                                <img src="public/images/<?php echo $product['f_gambar']; ?>" alt="Product Image">
+                                            </div>
+                                            <div class="product-details">
+                                                <h3><?php echo $product['f_pakaian']; ?></h3>
+                                                <div style="display: flex; gap: 10px" >
+                                                    <img src="public/images/<?php echo htmlspecialchars($product['f_warna']); ?>" alt="warna produk">
+                                                    <p>Size: <?php echo $product['f_ukuran']; ?></p>
+                                                    <p>|</p>
+                                                    <p>Quantity: <?php echo $product['f_quantity']; ?></p>
+                                                </div>
+                                            </div>
+                                            <div class="product-info">
+                                                <p>Rp.<?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
                                 </div>
-                
-                                <div class="desk">
-                                        <h5><?php echo htmlspecialchars($product['f_pakaian']); ?></h5>
-                                    <div class="size">
-                                        <p>size: <?php echo htmlspecialchars($product['f_ukuran']); ?></p>
+                            <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div id="packed" class="tab-content">
+                <?php
+                $sql="SELECT * FROM t_orders WHERE f_iduser = $user_id AND f_status = 'Packaging'";
+                $orders = $db->getALL($sql);
+                ?>
+                <div class="order-list">
+                    <?php if(empty($orders)): ?>
+                        <h3 style="text-align: center;">No orders found</h3>
+                        <?php else: ?>
+                            <?php $i = 0; ?>
+                            <?php foreach ($orders as $order):; ?>
+                                <div class="order">
+                                <?php
+                                    $i+=1;
+                                    $id = $order['f_id'];
+                                    $sql = "SELECT t_orderdetails.*, t_barang.f_gambar,t_barang.f_pakaian
+                                            FROM t_orderdetails
+                                            JOIN t_barang ON t_orderdetails.f_idbarang = t_barang.f_id
+                                            WHERE t_orderdetails.f_idorder = $id";
+                                    $orderDetails = $db->getALL($sql);
+                                    ?>
+                                <div class="order-header">
+                                    <h4>Order #<?php echo $order['f_id']; ?> | <?php echo $order['f_tanggal_pembelian']; ?></h4>
+                                    <p>Status: <?php echo $order['f_status']; ?></p>
+                                </div>
+                                    <?php foreach ($orderDetails as $product): ?>
+                                        <div class="product">
+                                            <div class="product-image-placeholder">
+                                                <img src="public/images/<?php echo $product['f_gambar']; ?>" alt="Product Image">
+                                            </div>
+                                            <div class="product-details">
+                                                <h3><?php echo $product['f_pakaian']; ?></h3>
+                                                <div style="display: flex; gap: 10px" >
+                                                    <img src="public/images/<?php echo htmlspecialchars($product['f_warna']); ?>" alt="warna produk">
+                                                    <p>Size: <?php echo $product['f_ukuran']; ?></p>
+                                                    <p>|</p>
+                                                    <p>Quantity: <?php echo $product['f_quantity']; ?></p>
+                                                </div>
+                                            </div>
+                                            <div class="product-info">
+                                                <p>Rp.<?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div id="shipped" class="tab-content">
+                <?php
+                $sql="SELECT * FROM t_orders WHERE f_iduser = $user_id AND f_status = 'Shipping'";
+                $orders = $db->getALL($sql);
+                ?>
+                <div class="order-list">
+                    <?php if(empty($orders)): ?>
+                        <h3 style="text-align: center;">No orders found</h3>
+                        <?php else: ?>
+                            <?php $i = 0; ?>
+                            <?php foreach ($orders as $order):; ?>
+                                <div class="order">
+                                <?php
+                                    $i+=1;
+                                    $id = $order['f_id'];
+                                    $sql = "SELECT t_orderdetails.*, t_barang.f_gambar,t_barang.f_pakaian
+                                            FROM t_orderdetails
+                                            JOIN t_barang ON t_orderdetails.f_idbarang = t_barang.f_id
+                                            WHERE t_orderdetails.f_idorder = $id";
+                                    $orderDetails = $db->getALL($sql);
+                                    ?>
+                                <div class="order-header">
+                                    <h4>Order #<?php echo $order['f_id']; ?> | <?php echo $order['f_tanggal_pembelian']; ?></h4>
+                                    <p>Status: <?php echo $order['f_status']; ?></p>
+                                </div>
+                                    <?php foreach ($orderDetails as $product): ?>
+                                        <div class="product">
+                                            <div class="product-image-placeholder">
+                                                <img src="public/images/<?php echo $product['f_gambar']; ?>" alt="Product Image">
+                                            </div>
+                                            <div class="product-details">
+                                                <h3><?php echo $product['f_pakaian']; ?></h3>
+                                                <div style="display: flex; gap: 10px" >
+                                                    <img src="public/images/<?php echo htmlspecialchars($product['f_warna']); ?>" alt="warna produk">
+                                                    <p>Size: <?php echo $product['f_ukuran']; ?></p>
+                                                    <p>|</p>
+                                                    <p>Quantity: <?php echo $product['f_quantity']; ?></p>
+                                                </div>
+                                            </div>
+                                            <div class="product-info">
+                                                <p>Rp.<?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div id="arrived" class="tab-content">
+            <?php
+                $sql="SELECT * FROM t_orders WHERE f_iduser = $user_id AND f_status = 'Arrived'";
+                $orders = $db->getALL($sql);
+                ?>
+                <div class="order-list">
+                    <?php if(empty($orders)): ?>
+                        <h3 style="text-align: center;">No orders found</h3>
+                        <?php else: ?>
+                            <?php $i = 0; ?>
+                            <?php foreach ($orders as $order):; ?>
+                                <div class="order">
+                                    <?php
+                                    $i+=1;
+                                    $id = $order['f_id'];
+                                    $sql = "SELECT t_orderdetails.*, t_barang.f_gambar,t_barang.f_pakaian
+                                            FROM t_orderdetails
+                                            JOIN t_barang ON t_orderdetails.f_idbarang = t_barang.f_id
+                                            WHERE t_orderdetails.f_idorder = $id";
+                                    $orderDetails = $db->getALL($sql);
+                                    ?>
+                                    <div class="order-header">
+                                        <h4>Order #<?php echo $order['f_id']; ?> | <?php echo $order['f_tanggal_pembelian']; ?></h4>
+                                        <p>Status: <?php echo $order['f_status']; ?></p>
+                                    </div>
+                                    <?php foreach ($orderDetails as $product): ?>
+                                        <div class="product">
+                                            <div class="product-image-placeholder">
+                                                <img src="public/images/<?php echo $product['f_gambar']; ?>" alt="Product Image">
+                                            </div>
+                                            <div class="product-details">
+                                                <h3><?php echo $product['f_pakaian']; ?></h3>
+                                                <div style="display: flex; gap: 10px" >
+                                                    <img src="public/images/<?php echo htmlspecialchars($product['f_warna']); ?>" alt="warna produk">
+                                                    <p>Size: <?php echo $product['f_ukuran']; ?></p>
+                                                    <p>|</p>
+                                                    <p>Quantity: <?php echo $product['f_quantity']; ?></p>
+                                                </div>
+                                            </div>
+                                            <div class="product-info">
+                                                <p>Rp.<?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                    <div class="confirm-arrival">
+                                        <form action="" method="POST">
+                                            <input type="hidden" name="order_id" value="<?php echo $id; ?>">
+                                            <button type="submit">Confirm Arrival</button>
+                                        </form>
                                     </div>
                                 </div>
+                                
+                            <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
 
-                                <div class="rattingprice">
-                                    <div class="ratting">
-                                        <?php for ($i = 0; $i < $product['f_rating']; $i++): ?>
-                                                    <i class="fas fa-star" style="color: rgb(252, 186, 3);"></i>
-                                        <?php endfor; ?>
-                                        <?php if ($product['f_rating'] < 5): ?>
-                                            <?php for ($i = 0; $i < 5 - $product['f_rating']; $i++): ?>
-                                                <i class="far fa-star" style="color: rgb(252, 186, 3);"></i>
-                                            <?php endfor; ?>
-                                        <?php endif; ?>
-                                    </div>
-
-                                    <div class="price">
-                                        <p>Rp <?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
-                                    </div>
+            <div id="completed" class="tab-content">
+                <?php
+                $sql = "SELECT * FROM t_orders WHERE f_iduser = $user_id AND f_status = 'Completed'";
+                $completedOrders = $db->getALL($sql);
+                ?>
+                <div class="order-list">
+                    <?php if(empty($completedOrders)): ?>
+                        <h3 style="text-align: center;">No completed orders</h3>
+                    <?php else: ?>
+                        <?php $i = 0; ?>
+                        <?php foreach ($completedOrders as $order): ?>
+                            <div class="order">
+                                <?php
+                                $i+=1;
+                                $id = $order['f_id'];
+                                $sql = "SELECT t_orderdetails.*, t_barang.f_gambar,t_barang.f_pakaian
+                                        FROM 
+                                            t_orderdetails
+                                        JOIN 
+                                            t_barang ON t_orderdetails.f_idbarang = t_barang.f_id
+                                        WHERE 
+                                            t_orderdetails.f_idorder = $id";
+                                $orderDetails = $db->getALL($sql);
+                                ?>
+                                <div class="order-header">
+                                    <h4>Order #<?php echo $order['f_id']; ?> | <?php echo $order['f_tanggal_pembelian']; ?></h4>
+                                    <p>Status: <?php echo $order['f_status']; ?></p>
                                 </div>
-
-                                <div class="btn-cart-details">
-                                    <div class="cart">
-                                    <form method="POST" action="">
-                                        <input type="hidden" name="product_id" value="<?php echo $product['f_id']; ?>">
-                                        <button type="submit" name="add_to_cart">
-                                            <i class="fas fa-shopping-cart"></i> Add to Cart
-                                        </button>
-                                    </form>
+                                <?php foreach ($orderDetails as $product): ?>
+                                    <div class="product">
+                                        <div class="product-image-placeholder">
+                                            <img src="public/images/<?php echo $product['f_gambar']; ?>" alt="Product Image">
+                                        </div>
+                                        <div class="product-details">
+                                            <h3><?php echo $product['f_pakaian']; ?></h3>
+                                            <div style="display: flex; gap: 10px" >
+                                                <img src="public/images/<?php echo htmlspecialchars($product['f_warna']); ?>" alt="warna produk">
+                                                <p>Size: <?php echo $product['f_ukuran']; ?></p>
+                                                <p>|</p>
+                                                <p>Quantity: <?php echo $product['f_quantity']; ?></p>
+                                            </div>
+                                        </div>
+                                        <div class="product-info">
+                                            <p>Rp.<?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
+                                        </div>
                                     </div>
-                                    <div class="details">
-                                        <button><a href="produk.php?id=<?php echo urlencode($product['f_id']);?>"><i class="fas fa-shopping-bag"></i> Details</a></button>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div id="review" class="tab-content">
+                <?php
+                $reviewSql = "SELECT 
+                    t_orders.f_tanggal_pembelian, 
+                    t_orders.f_status,
+                    t_orderdetails.f_ukuran,
+                    t_orderdetails.f_warna,
+                    t_orderdetails.f_quantity,
+                    t_barang.f_gambar,
+                    t_barang.f_pakaian,
+                    t_barang.f_harga,
+                    t_barang.f_id as barang_id
+                FROM 
+                    t_orders
+                JOIN 
+                    t_orderdetails ON t_orders.f_id = t_orderdetails.f_idorder
+                JOIN 
+                    t_barang ON t_orderdetails.f_idbarang = t_barang.f_id
+                WHERE 
+                    t_orders.f_iduser = $user_id
+                    AND t_orders.f_status = 'Completed' 
+                    AND (t_orderdetails.f_reviewed IS NULL OR t_orderdetails.f_reviewed = '')";
+
+                $reviewOrders = $db->getALL($reviewSql);
+                ?>
+                <div class="order-list">
+                    <?php if(empty($reviewOrders)): ?>
+                        <h3 style="text-align: center;">No orders to review</h3>
+                    <?php else: ?>
+                        <?php foreach ($reviewOrders as $product): ?>
+                            <div class="order">
+                                <div class="order-header">
+                                    <h4><?php echo $product['f_tanggal_pembelian']; ?></h4>
+                                    <p>Status: <?php echo $product['f_status']; ?></p>
+                                </div>
+                                <div class="product">
+                                    <div class="product-image-placeholder">
+                                        <img src="public/images/<?php echo $product['f_gambar']; ?>" alt="Product Image">
+                                    </div>
+                                    <div class="product-details">
+                                        <h3><?php echo $product['f_pakaian']; ?></h3>
+                                        <div style="display: flex; gap: 10px" >
+                                            <p>Size: <?php echo $product['f_ukuran']; ?></p>
+                                            <p>|</p>
+                                            <p>Quantity: <?php echo $product['f_quantity']; ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="product-info">
+                                        <p>Rp.<?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
+                                        <div>
+                                            <div class="review">
+                                                <button type="button" onclick="openReviewModal('<?php echo $product['barang_id']; ?>', '<?php echo htmlspecialchars($product['f_ukuran']); ?>', '<?php echo htmlspecialchars($product['f_warna']); ?>')" class="review-btn">
+                                                    Leave Review
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
     </div>
 
+    <div id="reviewModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Write a Review</h2>
+            <form id="reviewForm" action="submit_review.php" method="POST">
+                <input type="hidden" id="productId" name="productId">
+                <input type="hidden" id="productSize" name="size">
+                <input type="hidden" id="productColor" name="color">
+                <div class="rating">
+                    <input type="radio" id="star5" name="rating" value="5" required>
+                    <label for="star5">★</label>
+                    <input type="radio" id="star4" name="rating" value="4">
+                    <label for="star4">★</label>
+                    <input type="radio" id="star3" name="rating" value="3">
+                    <label for="star3">★</label>
+                    <input type="radio" id="star2" name="rating" value="2">
+                    <label for="star2">★</label>
+                    <input type="radio" id="star1" name="rating" value="1">
+                    <label for="star1">★</label>
+                </div>
+                <textarea name="review" id="reviewText" placeholder="Write your review here..." required></textarea>
+                <button type="submit" class="submit-review">Submit Review</button>
+            </form>
+        </div>
+    </div>
+
+
 
 <script>
     function toggleWishlist(userId, itemId) {
         const icon = document.getElementById(`heart-icon-${itemId}`);
-        const isInWishlist = icon.style.color === "rgb(255, 0, 0)"; // Check if already liked
+        const isInWishlist = icon.style.color === "rgb(255, 0, 0)"; 
 
         fetch('toggle-wishlist.php', {
             method: 'POST',
@@ -211,6 +476,50 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
         .catch(error => {
             console.error('Error:', error);
         });
+    }
+
+  
+    function openTab(evt, tabName) {
+        var i, tabcontent, tabbuttons;   
+     
+        tabcontent = document.getElementsByClassName("tab-content");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        
+        tabbuttons = document.getElementsByClassName("tab-button");
+        for (i = 0; i < tabbuttons.length; i++) {
+            tabbuttons[i].className = tabbuttons[i].className.replace(" active", "");
+        }
+        
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelector('.tab-button').click();
+    });
+
+    function openReviewModal(productId, size, color) {
+        const modal = document.getElementById("reviewModal");
+        document.getElementById("productId").value = productId;
+        document.getElementById("productSize").value = size;
+        document.getElementById("productColor").value = color;
+        modal.style.display = "block";
+    }
+
+    const modal = document.getElementById("reviewModal");
+    
+    const span = document.getElementsByClassName("close")[0];
+    
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
     }
 </script>
 </body>

@@ -37,12 +37,12 @@ if (isset($_GET['code'])) {
         $sql_insert = "INSERT INTO t_user (f_nama, email, f_password) VALUES ('$name', '$email', '$token')";
         $db->runSQL($sql_insert);
         
-        $sql_get_id = "SELECT f_id FROM t_user WHERE email = '$email'";
+        $sql_get_id = "SELECT f_id, f_peran FROM t_user WHERE email = '$email'";
         $user = $db->getITEM($sql_get_id);
         $userId = $user['f_id'];
     } else {
         
-        $sql_get_id = "SELECT f_id FROM t_user WHERE email = '$email'";
+        $sql_get_id = "SELECT f_id,f_peran FROM t_user WHERE email = '$email'";
         $user = $db->getITEM($sql_get_id);
         $userId = $user['f_id'];
     }
@@ -50,6 +50,7 @@ if (isset($_GET['code'])) {
     $_SESSION['email'] = $email;
     $_SESSION['name'] = $name;
     $_SESSION['iduser'] = $userId;
+    $_SESSION['role'] = $user['f_peran'];
     $_SESSION['loggedin'] = true; 
     header("Location: index.php");
     exit();
@@ -83,6 +84,7 @@ if (isset($_POST['log'])) {
             $_SESSION['iduser'] = $row['f_id'];
             $_SESSION['role'] = $row['f_peran'];
             $_SESSION['poto'] = $row['f_poto'];
+            $_SESSION['address'] = $row['f_alamat'];
             $_SESSION['loggedin'] = true; 
             header("Location: index.php");
             exit();

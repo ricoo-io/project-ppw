@@ -6,23 +6,35 @@
     $user = $_SESSION['email'];
     if (isset($_GET['log'])) {
         session_destroy();
-        header("location:../login.php");
+        header("location:..\login.php");
     }
+?>
 
-    $jumlahdata = $db->rowCOUNT("SELECT f_id FROM t_kategori");
-    $banyak = 15;
-    $halaman = ceil($jumlahdata / $banyak);
+<?php
+if (isset($_POST['simpan'])) {
+    $idBarang = $_POST['id_barang']; 
+    $diskon = $_POST['diskon']; 
 
-    if (isset($_GET['p'])) {
-        $p = $_GET['p'];
-        $mulai = ($p * $banyak) - $banyak;
+    if (empty($idBarang) || empty($diskon)) {
+        echo "<h4>Harap isi semua kolom!</h4>";
     } else {
-        $mulai = 0;
-    }
+        try {
+            if ($db->updateDiscount($idBarang, $diskon)) {
+                echo "<h4>Diskon berhasil diperbarui!</h4>";
+            } else {
+                echo "<h4>Diskon tidak diperbarui (tidak ada perubahan).</h4>";
+            }
+        } catch (Exception $e) {
+            echo "<h4>Gagal memperbarui diskon: " . $e->getMessage() . "</h4>";
+        }
 
-    $sql = "SELECT * FROM t_kategori ORDER BY f_id DESC LIMIT $mulai, $banyak";
-    $row = $db->getALL($sql);
-    $no = 1 + $mulai;
+        header("Location: select.php");
+        exit();
+    }
+}
+
+$sqlBarang = "SELECT f_id, f_pakaian FROM t_barang WHERE f_diskon = 0 OR f_diskon IS NULL";
+$dataBarang = $db->getALL($sqlBarang);
 ?>
 
 <!DOCTYPE html>
@@ -80,7 +92,7 @@
                                 Product
                             </a>
 
-                            <a class="nav-link" href="../profile/select.php">
+                            <a class="nav-link" href="../user/select.php">
                                 <div class="sb-nav-link-icon"><i class="fas fa-user"></i></div>
                                 User
                             </a>
@@ -95,69 +107,49 @@
                                 Detail Orders
                             </a>
 
-                            <a class="nav-link" href="../diskon/select.php">
+                            <a class="nav-link" href="select.php">
                                 <div class="sb-nav-link-icon"><i class="fas fa-tag"></i></div>
                                 Diskon
                             </a>
                             
                         </div>
                     </div>
-
                 </nav>
             </div>
             
             <div id="layoutSidenav_content">
                 <main>
-                    <div class="container-fluid px-4">
-                        <h1 class="mt-4">Category</h1>
+                    <div class="container-fluid px-5">
+                        <h1 class="mt-4">Insert Diskon</h1>
 
-                        <ol class="breadcrumb mb-4">
-                            <li class="breadcrumb-item">Category</li>
-                            <li class="breadcrumb-item active">Select</li>
-                        </ol>
+                            <div class="form-container">
+                                <form ction="" method="post">
 
-                        <div class="button mb-2">
-                            <a href="insert.php"><button type="button" class="btn btn-outline-primary">Insert</button></a>
-                        </div>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <i class="fas fa-table me-1"></i>
-                                DataTable Category
+                                    <div class="form-group">
+                                        <label for="id_barang">Pilih Barang</label>
+                                        <select id="id_barang" name="id_barang" required class="form-input">
+                                            <option value="">-- Pilih Barang --</option>
+                                            <?php foreach ($dataBarang as $barang) { ?>
+                                                <option value="<?php echo $barang['f_id']; ?>">
+                                                    <?php echo $barang['f_pakaian']; ?>
+                                                </option>
+                                            <?php } ?>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="diskon">Diskon (%)</label>
+                                        <input type="number" id="diskon" name="diskon" required placeholder="Masukkan Diskon" class="form-input" min="0" max="100">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <button type="submit" name="simpan" class="btn-submit">Simpan</button>
+                                    </div>
+
+                                </form>
                             </div>
-                            
-                            <div class="card-body">
-                                <table id="datatablesSimple">
-                                    <thead>
-                                        <tr>
-                                            <th>No</th>
-                                            <th>Gambar</th>
-                                            <th>Kategori</th>
-                                            <th>Update</th>
-                                            <th>Delete</th>
-                                            
-                                        </tr>
-                                    </thead>
-                                    
-                                    <tbody>
-                                    <?php if(!empty($row)) { ?>
-                                        <?php foreach ($row as $r) : ?>
-                                            <tr>
-                                                <td><?php echo $no++?></td>
-                                                <td><img style="width:85px" src="../public/images/<?php echo $r['f_gambar'] ?>" alt=""></td>
-                                                <td><?php echo $r['f_kategori'] ?></td>
-                                                <td><a href="update.php?id=<?php echo $r['f_id']; ?>"><i class="fas fa-edit"></i></a></td>
-                                                <td><a href="delete.php?id=<?php echo $r['f_id']; ?>"><i class="fas fa-trash"></i></a></td>
-                                            </tr>
-                                        <?php endforeach ?>
-                                    <?php } ?>
-                                        
-                                    </tbody>
-                                </table>
-
-                            </div>
-                        </div>
                     </div>
+
                 </main>
 
                 <footer class="py-4 bg-light mt-auto">

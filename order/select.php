@@ -3,14 +3,43 @@
     $db = new dbcontroller;
     session_start();
 
+    if (isset($_GET['m']) && $_GET['m'] == 'update' && isset($_GET['id'])) {
+        $id_order = $_GET['id'];
+        
+        $current_status_query = "SELECT f_status FROM t_orders WHERE f_id = $id_order";
+        $current_status = $db->getITEM($current_status_query)['f_status'];
+    
+        if ($current_status == 'Packaging') {
+            $new_status = 'Shipping'; 
+        } elseif ($current_status == 'Shipping') {
+            $new_status = 'Arrived'; 
+        } elseif ($current_status == 'Arrived') {
+            $new_status = 'Completed';
+        }else {
+            echo "Invalid status transition.";
+            exit;
+        }
+    
+        $update_sql = "UPDATE t_orders SET f_status = '$new_status' WHERE f_id = $id_order";
+        $db->runSQL($update_sql);
+        
+        if ($db->getAffectedRows() > 0) {
+            header("Location: select.php");
+            exit();
+        } else {
+            echo "Error updating status.";
+        }
+    }
+    
+    
     $user = $_SESSION['email'];
     if (isset($_GET['log'])) {
         session_destroy();
         header("location:../login.php");
     }
 
-    $jumlahdata = $db->rowCOUNT("SELECT f_id FROM t_kategori");
-    $banyak = 15;
+    $jumlahdata = $db->rowCOUNT("SELECT f_id FROM t_orders");
+    $banyak = 20;
     $halaman = ceil($jumlahdata / $banyak);
 
     if (isset($_GET['p'])) {
@@ -20,7 +49,12 @@
         $mulai = 0;
     }
 
-    $sql = "SELECT * FROM t_kategori ORDER BY f_id DESC LIMIT $mulai, $banyak";
+    $sql = "SELECT t_orders.f_id AS id_order, t_orders.f_tanggal_pembelian AS tanggal, 
+    t_orders.f_status AS status_order, t_orders.f_shipment AS metode_pengiriman, 
+    t_orders.f_payment AS metode_pembayaran, t_orders.f_shipping_address AS alamat_pengiriman, 
+    t_orders.f_total_harga AS total, t_user.f_nama AS nama, t_user.email AS email 
+    FROM t_orders INNER JOIN t_user ON t_orders.f_iduser = t_user.f_id 
+    ORDER BY t_orders.f_id DESC LIMIT $mulai, $banyak";
     $row = $db->getALL($sql);
     $no = 1 + $mulai;
 ?>
@@ -33,7 +67,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="description" content="" />
         <meta name="author" content="" />
-        <title>Category - SB Admin</title>
+        <title>Order - SB Admin</title>
         <link rel="icon" href="public/images/logo2.png" type="image/gif" sizes="16x16">
         <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
         <link href="../css/styless.css" rel="stylesheet" />
@@ -44,7 +78,7 @@
         
         <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
             <!-- Navbar Brand-->
-            <a class="navbar-brand ps-2" href="..\index.php"><img src="../public/images/logobaru.png" alt="" style="height: 48px;"></a>
+            <a class="navbar-brand ps-2" href="..\kelolaproduk.php"><img src="../public/images/logobaru.png" alt="" style="height: 48px;"></a>
             <!-- Sidebar Toggle-->
             <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
            
@@ -71,7 +105,7 @@
                                 Dashboard
                             </a>
                             
-                            <a class="nav-link" href="select.php">
+                            <a class="nav-link" href="../kategori/select.php">
                                 <div class="sb-nav-link-icon"><i class="fa-solid fa-list"></i></div>
                                 Category
                             </a>
@@ -85,7 +119,7 @@
                                 User
                             </a>
 
-                            <a class="nav-link" href="../order/select.php">
+                            <a class="nav-link" href="select.php">
                                 <div class="sb-nav-link-icon"><i class="fa-solid fa-cart-shopping"></i></div>
                                 Order
                             </a>
@@ -102,28 +136,27 @@
                             
                         </div>
                     </div>
-
                 </nav>
             </div>
-            
+
             <div id="layoutSidenav_content">
                 <main>
                     <div class="container-fluid px-4">
-                        <h1 class="mt-4">Category</h1>
+                        <h1 class="mt-4">Order</h1>
 
                         <ol class="breadcrumb mb-4">
-                            <li class="breadcrumb-item">Category</li>
+                            <li class="breadcrumb-item">Order</li>
                             <li class="breadcrumb-item active">Select</li>
                         </ol>
 
                         <div class="button mb-2">
-                            <a href="insert.php"><button type="button" class="btn btn-outline-primary">Insert</button></a>
+                            <a href="../exsport/export.php"><button type="button" class="btn btn-success">Export Data</button></a>
                         </div>
                         
                         <div class="card mb-4">
                             <div class="card-header">
                                 <i class="fas fa-table me-1"></i>
-                                DataTable Category
+                                DataTable Order
                             </div>
                             
                             <div class="card-body">
@@ -131,23 +164,41 @@
                                     <thead>
                                         <tr>
                                             <th>No</th>
-                                            <th>Gambar</th>
-                                            <th>Kategori</th>
-                                            <th>Update</th>
-                                            <th>Delete</th>
-                                            
+                                            <th>Nama</th>
+                                            <th>Email</th>
+                                            <th>Tanggal Pembelian</th>
+                                            <th>Metode Pembayaran</th>
+                                            <th>Metode Pengiriman</th>
+                                            <th>Alamat</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
                                         </tr>
                                     </thead>
                                     
                                     <tbody>
+                                    
                                     <?php if(!empty($row)) { ?>
                                         <?php foreach ($row as $r) : ?>
                                             <tr>
                                                 <td><?php echo $no++?></td>
-                                                <td><img style="width:85px" src="../public/images/<?php echo $r['f_gambar'] ?>" alt=""></td>
-                                                <td><?php echo $r['f_kategori'] ?></td>
-                                                <td><a href="update.php?id=<?php echo $r['f_id']; ?>"><i class="fas fa-edit"></i></a></td>
-                                                <td><a href="delete.php?id=<?php echo $r['f_id']; ?>"><i class="fas fa-trash"></i></a></td>
+                                                <td><?php echo $r['nama'] ?></td>
+                                                <td><?php echo $r['email'] ?></td>
+                                                <td><?php echo $r['tanggal'] ?></td>
+                                                <td><?php echo $r['metode_pembayaran'] ?></td>
+                                                <td><?php echo $r['metode_pengiriman'] ?></td>
+                                                <td><?php echo $r['alamat_pengiriman'] ?></td>
+                                                <td><?php echo $r['total'] ?></td>
+                                                <td><?php
+                                                        if ($r['status_order'] == 'Packaging') {
+                                                            echo "<a href='?m=update&id=" . $r['id_order'] . "'><button type='button' class='btn btn-outline-danger'>Packaging</button></a>";
+                                                        } elseif ($r['status_order'] == 'Shipping') {
+                                                            echo "<a href='?m=update&id=" . $r['id_order'] . "'><button type='button' class='btn btn-outline-warning'>Shipping</button></a>";
+                                                        } elseif ($r['status_order'] == 'Arrived') {
+                                                            echo "<a href='?m=update&id=" . $r['id_order'] . "'><button type='button' class='btn btn-outline-info'>Arrived</button></a>";
+                                                        } elseif ($r['status_order'] == 'Completed') {
+                                                            echo "<a href='?m=update&id=" . $r['id_order'] . "'><button type='button' class='btn btn-outline-success'>Completed</button></a>";
+                                                        }
+                                                        ?></td>
                                             </tr>
                                         <?php endforeach ?>
                                     <?php } ?>

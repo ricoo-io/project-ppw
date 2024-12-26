@@ -18,6 +18,7 @@ t_barang.f_pakaian,
 t_barang.f_gambar, 
 t_barang.f_harga, 
 t_barang.f_rating,
+t_barang.f_diskon,
 t_barang.f_quantity,   
 t_kategori.f_kategori, 
 GROUP_CONCAT(DISTINCT t_ukuran.f_ukuran ORDER BY FIELD(t_ukuran.f_ukuran, 'S', 'M', 'L', 'XL')) AS ukuran,
@@ -162,18 +163,30 @@ if (isset($_POST['add_to_cart'])) {
 
                                     <div class="rattingprice">
                                         <div class="ratting">
-                                            <?php for ($i = 0; $i < $product['f_rating']; $i++): ?>
-                                                        <i class="fas fa-star" style="color: rgb(252, 186, 3);"></i>
-                                            <?php endfor; ?>
-                                            <?php if ($product['f_rating'] < 5): ?>
-                                                <?php for ($i = 0; $i < 5 - $product['f_rating']; $i++): ?>
-                                                    <i class="far fa-star" style="color: rgb(252, 186, 3);"></i>
-                                                <?php endfor; ?>
-                                            <?php endif; ?>
+                                            <?php $sql = "SELECT AVG(f_rating) AS rating FROM t_review WHERE f_idbarang = " . $product['f_id'];
+                                            $result = $db->getITEM($sql);
+                                            $rating = $result['rating'] ?? 0; ?>
+                                            <span style="display: inline-flex; align-items: center;">
+                                                <i class="fas fa-star" style="color: rgb(252, 186, 3);"></i> 
+                                                <p style="margin: 0; padding-left: 5px; color=#a1a1a1;">(<?php echo number_format($rating, 1); ?>)</p>
+                                            </span>   
                                         </div>
 
                                         <div class="price">
-                                            <p>Rp <?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
+                                            <?php if ($product['f_diskon'] > 0): ?>
+                                                <div class="price-container">
+                                                    <p class="original-price">Rp <?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
+                                                    <p class="discounted-price">
+                                                        Rp <?php 
+                                                        $discounted_price = $product['f_harga'] * (1 - $product['f_diskon']/100);
+                                                        echo number_format($discounted_price, 0, ',', '.'); 
+                                                        ?>
+                                                    </p>
+                                                    <span class="discount-badge">-<?php echo $product['f_diskon']; ?>%</span>
+                                                </div>
+                                            <?php else: ?>
+                                                <p>Rp <?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
 
@@ -236,7 +249,7 @@ if (isset($_POST['add_to_cart'])) {
 <script>
     function toggleWishlist(userId, itemId) {
         const icon = document.getElementById(`heart-icon-${itemId}`);
-        const isInWishlist = icon.style.color === "rgb(255, 0, 0)"; // Check if already liked
+        const isInWishlist = icon.style.color === "rgb(255, 0, 0)"; 
 
         fetch('toggle-wishlist.php', {
             method: 'POST',

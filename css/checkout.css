@@ -218,10 +218,14 @@ p {
 .shipping select {
     width: 100%;
     padding: 0.5rem;
-    border: 1px solid rgb(109, 109, 109);
+    border: 1px solid rgb(154, 154, 154);
     border-radius: 5px;
     margin: 10px 0;
     outline: none;
+}
+
+.shipping h2 {
+    font-size: 20px;
 }
 
 .hidden {
@@ -242,6 +246,7 @@ p {
     height: 80px;
     border-radius: 8px;
     margin-right: 20px;
+    object-fit: cover;
 }
 
 .product-info {
@@ -269,7 +274,7 @@ p {
 }
 
 .checkout-button {
-    background-color: #ef4444;
+    background-color: #6484cf;
     color: #fff;
     border: none;
     padding: 10px;
@@ -312,5 +317,5 @@ p {
 }
 
 .checkout-button:hover {
-    background-color: #dc2626;
+    background-color: #3f5485;
 }

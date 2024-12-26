@@ -235,6 +235,32 @@ body {
     background-color: #5182a3;
 }
 
+.checkout-buttons a {
+    display: inline-block;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-align: center;
+    width: 100%;
+}
+
+.checkout-enabled {
+    background-color: #6484cf;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.checkout-enabled:hover {
+    background-color: #3f5485;
+}
+
+.checkout-disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+}
+
 .btn {
     padding: 10px 20px;
     border: none;
@@ -249,7 +275,7 @@ body {
 }
 
 .cart-item-controls input{
-    width: 35px; /* Increased from 25px */
+    width: 35px; 
     height: 25px;
     text-align: center;
     border: 1px solid #ddd;
@@ -259,5 +285,34 @@ body {
 }
 
 .cart-item-controls button{
+    font-weight: bold;
+}
+
+.discount-price {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 12px;
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: #888;
+    font-size: 18px;
+}
+
+.discounted-price {
+    font-weight: bold;
+    font-size: 24px;
+    color: black;
+}
+
+.discount-badge-2{
+    right: 0;
+    background-color: #ff0000;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
     font-weight: bold;
 }

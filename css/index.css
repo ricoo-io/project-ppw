@@ -144,13 +144,13 @@ li:hover {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 35px;
+    gap: 30px;
     margin-top: 5px;
 }
 
 .box{
-    width: 150px;
-    height: 150px;
+    width: 130px;
+    height: 130px;
     background: #fff;
     position: relative;
     display: flex;
@@ -375,14 +375,49 @@ padding-bottom: 5px;
     margin: 0;
 }
 
+.ratting p{
+    color : #727272;
+}
+
 .price {
     position: absolute;
     top: 0;
     right: 0;
     display: flex;
     gap: 10px;
-    font-size: 14px;
+    font-size: 16px;
     color: black;
+}
+
+.price-container {
+    display: flex;
+    align-items: flex-end;
+    position: relative;
+    gap:10px;
+}
+
+.price .original-price {
+    text-decoration: line-through;
+    color: #999;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.price .discounted-price {
+    color: #ff0000;
+    font-weight: bold;
+}
+
+.discount-badge {
+    position: absolute;
+    top: -20px;
+    right: 0;
+    background-color: #ff0000;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: bold;
 }
 
 .btn-cart-details {

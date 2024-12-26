@@ -13,7 +13,8 @@ if (isset($_GET['id'])) {
             t_barang.f_id,
             t_barang.f_pakaian, 
             t_barang.f_gambar, 
-            t_barang.f_harga, 
+            t_barang.f_harga,
+            t_barang.f_diskon, 
             t_barang.f_rating,
             t_barang.f_quantity,
             t_ukuran.f_ukuran,    
@@ -62,11 +63,10 @@ if (isset($_GET['id'])) {
         $result = $db->getITEM($sql);
         $currentQuantity = $result['current_quantity'] ?? 0;
         
-        // Check if adding new quantity would exceed stock
         if (($currentQuantity + $quantity) > $product['f_quantity']) {
             $remaining = $product['f_quantity'] - $currentQuantity;
             if ($remaining <= 0) {
-                $notification = "This item is already in your cart with maximum stock!";
+                $notification = "Sorry, this item is out of stock!";
             } else {
                 $notification = "Can only add {$remaining} more of this item with selected size and color!";
             }
@@ -116,103 +116,159 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
     </nav>
   </header>
 
-  <div class="cart-wrapper">
-    <div class="product-details">
-      <div class="product-image">
-        <img src="public/images/<?php echo htmlspecialchars($product['f_gambar']); ?>" alt="Gambar Item" />
+  <div class="container3">
+    <div class="cart-wrapper">
+      <div class="product-details">
+        <div class="product-image">
+          <img src="public/images/<?php echo htmlspecialchars($product['f_gambar']); ?>" alt="Gambar Item" />
+        </div>
+        <div class="product-info">
+          <h4><?php echo htmlspecialchars($product['f_pakaian']); ?></h4>
+
+            <div class="discount-price">
+                <?php if ($product['f_diskon'] > 0): ?>
+                    <span class="original-price">Rp<?php echo number_format($product['f_harga'], 0, ',', '.'); ?></span>
+                    <span class="discounted-price">Rp<?php echo number_format($product['f_harga'] * (1 - $product['f_diskon']/100), 0, ',', '.'); ?></span>
+                    <span class="discount-badge-2">-<?php echo $product['f_diskon']; ?>%</span>
+                <?php else: ?>
+                    <span class="discounted-price">Rp<?php echo number_format($product['f_harga'], 0, ',', '.'); ?></span>
+                <?php endif; ?>
+            </div>
+          
+          <div class="options">
+              <div class="option">
+                <label>Kategori:</label>
+                <div class="option-buttons">
+                  <button><?php echo htmlspecialchars($product['f_kategori']);?></button>
+                </div>
+              </div>  
+          </div>          
+          <p style="font-weight: bold;">Detail Produk</p>
+          <p><?php echo $product['f_detail']; ?></p>
+        </div>
       </div>
-      <div class="product-info">
-        <h4><?php echo htmlspecialchars($product['f_pakaian']); ?></h4>
-          <div class="rattingprice">
-              <div class="ratting">
-                  <?php for ($i = 0; $i < $product['f_rating']; $i++): ?>
-                      <i class="fas fa-star"></i>
-                  <?php endfor; ?>
+
+      <div class="cart-summary">
+        <form method="POST" action="">
+          <div class="options">
+              <div class="option">
+                  <label>Pilihan Warna:</label>
+                  <div class="color-product2">
+                      <?php 
+                      $colorImages = explode(',', $product['colors']);
+                      foreach ($colorImages as $colorImage): 
+                      ?>
+                          <label>
+                              <input type="radio" name="color" value="<?php echo htmlspecialchars(trim($colorImage)); ?>" required>
+                              <img src="public/images/<?php echo htmlspecialchars(trim($colorImage)); ?>" alt="Color Image">
+                          </label>
+                      <?php endforeach; ?>
+                  </div>
+              </div>
+              <div class="option">
+                  <label>Ukuran:</label>
+                  <div class="option-buttons">
+                      <?php 
+                      $sizes = explode(',', $product['ukuran']);
+                      foreach ($sizes as $ukuran): 
+                      ?>
+                          <label class="size-label">
+                              <input type="radio" name="size" value="<?php echo htmlspecialchars(trim($ukuran)); ?>" required>
+                              <span class="size-text"><?php echo htmlspecialchars(trim($ukuran)); ?></span>
+                          </label>
+                      <?php endforeach; ?>
+                  </div>
               </div>
           </div>
-          <p style="font-weight: bold; font-size: 24px;padding-top: 12px;color: black;">Rp<?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
+          
+          <div class="quantity-controls">
+            <button onclick="updateQuantity('decrease')" class="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full hover:bg-gray-300">
+                <span class="text-xl font-semibold">-</span>
+            </button>
+              <span id="quantity" class="text-lg text-gray-800">1</span>
+            <button onclick="updateQuantity('increase')"
+              class="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full hover:bg-gray-300">
+                <span class="text-xl font-semibold">+</span>
+            </button>
+
+          </div>
+          <p id="subtotal">Subtotal: Rp <?php echo number_format($product['f_diskon'] > 0 ? $product['f_harga'] * (1 - $product['f_diskon']/100) : $product['f_harga'], 0, ',', '.'); ?></p>
+          
+              <input type="hidden" name="product_id" value="<?php echo $product['f_id']; ?>">
+              <input type="hidden" id="cart_quantity" name="quantity" value="1">
+              <button type="submit" name="add_to_cart" class="checkout-btn">
+                  <i class="fas fa-shopping-cart"></i> + Add to Cart
+              </button>
+        </form>
+        <button class="buy-now-btn">Beli Langsung</button>
         
-        <div class="options">
-            <div class="option">
-              <label>Kategori:</label>
-              <div class="option-buttons">
-                <button><?php echo htmlspecialchars($product['f_kategori']);?></button>
-              </div>
-            </div>  
-        </div>          
-        <p style="font-weight: bold;">Detail Produk</p>
-        <p><?php echo $product['f_detail']; ?></p>
+        <?php if (!empty($notification)): ?>
+          <p class="notification"><?php echo $notification; ?></p> 
+          <meta http-equiv="refresh" content ="2; url=cart.php"/>
+        <?php endif; ?>
+
       </div>
     </div>
 
-    <div class="cart-summary">
-      <form method="POST" action="">
-        <div class="options">
-            <div class="option">
-                <label>Pilihan Warna:</label>
-                <div class="color-product2">
-                    <?php 
-                    $colorImages = explode(',', $product['colors']);
-                    foreach ($colorImages as $colorImage): 
-                    ?>
-                        <label>
-                            <input type="radio" name="color" value="<?php echo htmlspecialchars(trim($colorImage)); ?>" required>
-                            <img src="public/images/<?php echo htmlspecialchars(trim($colorImage)); ?>" alt="Color Image">
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <div class="option">
-                <label>Ukuran:</label>
-                <div class="option-buttons">
-                    <?php 
-                    $sizes = explode(',', $product['ukuran']);
-                    foreach ($sizes as $ukuran): 
-                    ?>
-                        <label class="size-label">
-                            <input type="radio" name="size" value="<?php echo htmlspecialchars(trim($ukuran)); ?>" required>
-                            <span class="size-text"><?php echo htmlspecialchars(trim($ukuran)); ?></span>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-            </div>
+    <div class="review-container">
+      <?php $sql = "SELECT AVG(f_rating) as avg_rating FROM t_review WHERE f_idbarang = $productId";
+      $result = $db->getITEM($sql);
+      $avgRating = $result['avg_rating'] ?? 0;
+      $sql = "SELECT COUNT(f_id) as total_reviews FROM t_review WHERE f_idbarang = $productId";
+      $result = $db->getITEM($sql);
+      $totalReviews = $result['total_reviews'] ?? 0;
+      ?>
+        <h1>Product Reviews</h1>
+        <div class="overall-rating">
+            <span class="rating-value"><?php echo number_format($avgRating, 1); ?>/5</span>                    
+            <span class="review-count">(<?php echo $totalReviews; ?> reviews)</span>
         </div>
-        
-        <div class="quantity-controls">
-          <button onclick="updateQuantity('decrease')" class="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full hover:bg-gray-300">
-              <span class="text-xl font-semibold">-</span>
-          </button>
-            <span id="quantity" class="text-lg text-gray-800">1</span>
-          <button onclick="updateQuantity('increase')"
-            class="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full hover:bg-gray-300">
-              <span class="text-xl font-semibold">+</span>
-          </button>
+
+        <?php $sql="SELECT t_review.*, t_user.f_nama, t_user.f_poto 
+                    FROM 
+                      t_review 
+                    JOIN 
+                      t_user ON t_review.f_iduser = t_user.f_id 
+                    WHERE 
+                      t_review.f_idbarang = $productId
+                    ORDER BY 
+                      t_review.f_tanggal DESC";
+        $reviews = $db->getALL($sql);
+        ?>
+        <div class="review-section">
+          <?php if (empty($reviews)): ?>
+            <p>No reviews yet.</p>
+          <?php else: ?>
+            <?php foreach ($reviews as $review): ?>
+              <div class="review">
+                  <div class="profile-review">
+                    <img src="public/images/<?php echo $review['f_poto']; ?>" alt="User Profile Picture">
+                    <div>
+                      <div class="username"><?php echo $review['f_nama']; ?></div>
+                      <div class="rating">
+                        <span class="stars"><?php echo str_repeat('★', $review['f_rating']); ?></span> 
+                        <span class="rating-value"><?php echo $review['f_rating']; ?>/5</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="date">Reviewed on: <?php echo $review['f_tanggal']; ?></div>
+                  <div class="comment"><?php echo $review['f_review']; ?>.</div>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
 
         </div>
-        <p id="subtotal">Subtotal: Rp <?php echo number_format($product['f_harga'], 0, ',', '.'); ?></p>
-        
-            <input type="hidden" name="product_id" value="<?php echo $product['f_id']; ?>">
-            <input type="hidden" id="cart_quantity" name="quantity" value="1">
-            <button type="submit" name="add_to_cart" class="checkout-btn">
-                <i class="fas fa-shopping-cart"></i> + Add to Cart
-            </button>
-      </form>
-      <button class="buy-now-btn">Beli Langsung</button>
-      
-      <?php if (!empty($notification)): ?>
-        <p class="notification"><?php echo $notification; ?></p> 
-        <meta http-equiv="refresh" content ="2; url=cart.php"/>
-      <?php endif; ?>
-
     </div>
-  </div>
-    
+
+  </div>  
 <script>
-  const productPrice = <?php echo $product['f_harga']; ?>;
+  const productPrice = <?php echo $product['f_diskon'] > 0 ? 
+    $product['f_harga'] * (1 - $product['f_diskon']/100) : 
+    $product['f_harga']; ?>;
   const stock = <?php echo $product['f_quantity']; ?>;
   let quantity = 1;
 
-  // Get current cart quantity for this product
   const currentCartQuantity = <?php 
     $sql = "SELECT SUM(f_quantity) as qty FROM t_cart 
             WHERE f_iduser = $user_id 
@@ -229,11 +285,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_search'])) {
 
     let newQuantity = parseInt(quantityElement.textContent) + (action === 'increase' ? 1 : -1);
     
-    // Check if new quantity plus cart quantity would exceed stock
     if (action === 'increase' && (currentCartQuantity + newQuantity) > stock) {
         const remaining = stock - currentCartQuantity;
         if (remaining <= 0) {
-            alert('Maximum stock for this item is already in your cart!');
+            alert('Sorry, this item is out of stock!');
         } else {
             alert(`Can only add ${remaining} more of this item!`);
         }

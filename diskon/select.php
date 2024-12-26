@@ -9,7 +9,7 @@
         header("location:../login.php");
     }
 
-    $jumlahdata = $db->rowCOUNT("SELECT f_id FROM t_kategori");
+    $jumlahdata = $db->rowCOUNT("SELECT f_id FROM t_barang");
     $banyak = 15;
     $halaman = ceil($jumlahdata / $banyak);
 
@@ -20,7 +20,7 @@
         $mulai = 0;
     }
 
-    $sql = "SELECT * FROM t_kategori ORDER BY f_id DESC LIMIT $mulai, $banyak";
+    $sql = "SELECT * FROM t_barang ORDER BY f_id DESC LIMIT $mulai, $banyak";
     $row = $db->getALL($sql);
     $no = 1 + $mulai;
 ?>
@@ -33,7 +33,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="description" content="" />
         <meta name="author" content="" />
-        <title>Category - SB Admin</title>
+        <title>Diskon - SB Admin</title>
         <link rel="icon" href="public/images/logo2.png" type="image/gif" sizes="16x16">
         <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
         <link href="../css/styless.css" rel="stylesheet" />
@@ -54,7 +54,7 @@
                     <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                         <li><a class="dropdown-item" href="?log=logout">Logout</a></li>
-                        <li><a class="dropdown-item" href="../index.php">Halaman Utama</a></li>
+                        <li><a class="dropdown-item" href="..\index.php">Halaman Utama</a></li>
                     </ul>
                 </li>
             </ul>
@@ -71,7 +71,7 @@
                                 Dashboard
                             </a>
                             
-                            <a class="nav-link" href="select.php">
+                            <a class="nav-link" href="../kategori/select.php">
                                 <div class="sb-nav-link-icon"><i class="fa-solid fa-list"></i></div>
                                 Category
                             </a>
@@ -95,7 +95,7 @@
                                 Detail Orders
                             </a>
 
-                            <a class="nav-link" href="../diskon/select.php">
+                            <a class="nav-link" href="select.php">
                                 <div class="sb-nav-link-icon"><i class="fas fa-tag"></i></div>
                                 Diskon
                             </a>
@@ -109,21 +109,21 @@
             <div id="layoutSidenav_content">
                 <main>
                     <div class="container-fluid px-4">
-                        <h1 class="mt-4">Category</h1>
+                        <h1 class="mt-4">Diskon</h1>
 
                         <ol class="breadcrumb mb-4">
-                            <li class="breadcrumb-item">Category</li>
+                            <li class="breadcrumb-item">Diskon</li>
                             <li class="breadcrumb-item active">Select</li>
                         </ol>
 
                         <div class="button mb-2">
-                            <a href="insert.php"><button type="button" class="btn btn-outline-primary">Insert</button></a>
+                            <a href="insert.php"><button type="button" class="btn btn-outline-primary">Insert Data</button></a>
                         </div>
                         
                         <div class="card mb-4">
                             <div class="card-header">
                                 <i class="fas fa-table me-1"></i>
-                                DataTable Category
+                                DataTable Diskon
                             </div>
                             
                             <div class="card-body">
@@ -131,27 +131,33 @@
                                     <thead>
                                         <tr>
                                             <th>No</th>
-                                            <th>Gambar</th>
-                                            <th>Kategori</th>
+                                            <th>Product</th>
+                                            <th>Harga Awal</th>
+                                            <th>Diskon</th>
+                                            <th>Harga Diskon</th>
                                             <th>Update</th>
-                                            <th>Delete</th>
-                                            
                                         </tr>
                                     </thead>
                                     
                                     <tbody>
                                     <?php if(!empty($row)) { ?>
                                         <?php foreach ($row as $r) : ?>
+                                            <?php
+                                                $hargaAwal = $r['f_harga'];
+                                                $diskon = $r['f_diskon'];
+                                                $hargaDiskon = $hargaAwal - ($hargaAwal * $diskon / 100);
+                                            ?>
                                             <tr>
                                                 <td><?php echo $no++?></td>
-                                                <td><img style="width:85px" src="../public/images/<?php echo $r['f_gambar'] ?>" alt=""></td>
-                                                <td><?php echo $r['f_kategori'] ?></td>
+                                                <td><?php echo $r['f_pakaian'] ?></td>
+                                                <td><?php echo $hargaAwal ?></td>
+                                                <td><?php echo $diskon ?>%</td>
+                                                <td><?php echo number_format($hargaDiskon, 2) ?></td>
                                                 <td><a href="update.php?id=<?php echo $r['f_id']; ?>"><i class="fas fa-edit"></i></a></td>
-                                                <td><a href="delete.php?id=<?php echo $r['f_id']; ?>"><i class="fas fa-trash"></i></a></td>
                                             </tr>
                                         <?php endforeach ?>
                                     <?php } ?>
-                                        
+                                      
                                     </tbody>
                                 </table>
 
